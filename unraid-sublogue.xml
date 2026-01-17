@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Container>
+  <Name>sublogue</Name>
+  <Repository>ponzischeme89/sublogue:latest</Repository>
+  <Network>npm_network</Network>
+
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+
+  <Config Name="WebUI" Target="http://[IP]:[PORT:5000]" Default="http://[IP]:5000" Mode="http"/>
+
+  <Port>
+    <HostPort>5000</HostPort>
+    <ContainerPort>5000</ContainerPort>
+    <Protocol>tcp</Protocol>
+    <Name>Web UI + API</Name>
+  </Port>
+
+  <Volume>
+    <HostDir>/mnt/user/appdata/sublogue</HostDir>
+    <ContainerDir>/config</ContainerDir>
+    <Mode>rw</Mode>
+  </Volume>
+
+  <Volume>
+    <HostDir>/mnt/user/appdata/sublogue/media</HostDir>
+    <ContainerDir>/media</ContainerDir>
+    <Mode>rw</Mode>
+  </Volume>
+
+  <Environment>
+    <Name>TZ</Name>
+    <Value>Etc/UTC</Value>
+  </Environment>
+
+  <Environment>
+    <Name>PUID</Name>
+    <Value>1000</Value>
+  </Environment>
+
+  <Environment>
+    <Name>PGID</Name>
+    <Value>1000</Value>
+  </Environment>
+</Container>

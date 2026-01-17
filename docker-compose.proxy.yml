@@ -1,0 +1,70 @@
+version: "3.9"
+
+# Sublogue behind Nginx Proxy Manager (NPM)
+services:
+  sublogue:
+    # Production image for Sublogue
+    image: ponzischeme89/sublogue:latest
+    # Explicit container name for easy discovery
+    container_name: sublogue
+    # Always restart unless manually stopped
+    restart: unless-stopped
+
+    # Environment variables for permissions + timezone (Linux servers)
+    environment:
+      - TZ=Etc/UTC           # Set timezone
+      - PUID=1000            # Set user ID for file permissions
+      - PGID=1000            # Set group ID for file permissions
+
+    # Persist data/configuration
+    volumes:
+      - ./data:/config       # App configuration and database
+      - ./media:/media       # Media library mount (read/write)
+
+    # Internal app port (proxied by NPM)
+    expose:
+      - "5000"               # Web UI + API (Flask)
+
+    # Healthcheck for uptime monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+    # Use the shared network if it exists
+    networks:
+      - npm_network
+
+  npm:
+    # Nginx Proxy Manager with automatic HTTPS via Let's Encrypt
+    image: jc21/nginx-proxy-manager:latest
+    # Explicit container name for easy discovery
+    container_name: nginx-proxy-manager
+    # Always restart unless manually stopped
+    restart: unless-stopped
+
+    # NPM ports
+    ports:
+      - "80:80"              # HTTP
+      - "81:81"              # NPM admin UI
+      - "443:443"            # HTTPS
+
+    # Environment variables
+    environment:
+      - TZ=Etc/UTC           # Set timezone
+
+    # Persist NPM data and certificates
+    volumes:
+      - ./npm/data:/data     # NPM config
+      - ./npm/letsencrypt:/etc/letsencrypt
+
+    # Use the shared network if it exists
+    networks:
+      - npm_network
+
+# Dedicated network (uses existing npm_network if present)
+networks:
+  npm_network:
+    external: true

@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+env
+*.egg-info
+.eggs
+dist
+build
+
+# Node
+frontend/node_modules
+frontend/.svelte-kit
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.claude
+
+# Database (will be mounted as volume in production)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+!README.md
+
+# Temp files
+tmp*
+*.tmp
+nul
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Workspace files
+*.code-workspace

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Sublogue — Documentation</title>
+
+    <!-- Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        :root {
+            --bg: #0b0b0c;
+            --bg-soft: #0f1115;
+            --fg: #e5e7eb;
+            --muted: #9ca3af;
+            --soft: #cbd5e1;
+            --accent: #7dd3fc;
+            --accent-strong: #38bdf8;
+            --border: rgba(255, 255, 255, 0.08);
+            --card: rgba(255, 255, 255, 0.04);
+            --code-bg: #050506;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, sans-serif;
+            background:
+                radial-gradient(900px 400px at 50% -10%, #0f172a44, transparent 70%),
+                var(--bg);
+            color: var(--fg);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* ---------------- NAV ---------------- */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 11, 12, 0.75);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0.9rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #38bdf8, #0ea5e9);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+            animation: logoPulse 6s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.06);
+            }
+        }
+
+        .nav-links {
+            display: none;
+            gap: 1.5rem;
+            align-items: center;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .docker-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.7rem;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .docker-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--fg);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+            }
+
+            .menu-btn {
+                display: none;
+            }
+        }
+
+        /* ---------------- MOBILE MENU ---------------- */
+        .mobile-menu {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 11, 12, 0.96);
+            backdrop-filter: blur(18px);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            padding: 2.5rem 2rem;
+        }
+
+        .mobile-menu a {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            font-weight: 600;
+        }
+
+        .mobile-close {
+            align-self: flex-end;
+            font-size: 1.8rem;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        /* ---------------- HERO ---------------- */
+        header {
+            position: relative;
+            overflow: hidden;
+            padding: 4.5rem 1.25rem 3.5rem;
+        }
+
+        header::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg,
+                    transparent 30%,
+                    rgba(125, 211, 252, 0.12),
+                    transparent 70%);
+            opacity: 0;
+            animation: headerGlow 7s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes headerGlow {
+
+            0%,
+            100% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .hero {
+            max-width: 720px;
+            margin: 0 auto;
+            animation: fadeUp 0.8s ease both;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-size: 1.05rem;
+            max-width: 520px;
+        }
+
+        /* ---------------- ANIMATIONS ---------------- */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* ---------------- CARD ---------------- */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.6rem;
+            margin: 2rem auto;
+            max-width: 720px;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .card p {
+            color: var(--soft);
+        }
+
+        /* ---------------- MAIN ---------------- */
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 6rem;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.1rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            color: #bae6fd;
+        }
+
+        .install-section {
+            max-width: 720px;
+            margin: 5rem auto;
+            padding: 0 1.25rem;
+        }
+
+        .install-btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #041b0f;
+            font-weight: 700;
+            padding: 0.75rem 1.2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.35);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .install-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 40px rgba(34, 197, 94, 0.45);
+        }
+
+        .demo-section {
+            max-width: 720px;
+            margin: 5rem auto;
+            padding: 0 1.25rem;
+        }
+
+        .demo-title {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .demo-card {
+            position: relative;
+            background: #050506;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-height: 180px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .demo-frame {
+            position: absolute;
+            inset: 0;
+            padding: 1.5rem;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .demo-frame.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .demo-header {
+            font-family: "IBM Plex Sans", sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            opacity: 0.5;
+            margin-bottom: 0.4rem;
+        }
+
+        .demo-title-line {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .demo-meta {
+            font-family: "IBM Plex Sans", sans-serif;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 0.6rem;
+        }
+
+        .demo-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+
+<body x-data="{ menuOpen: false }">
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-inner">
+            <div class="brand">
+                <div class="logo"></div>
+                Sublogue
+            </div>
+
+            <div class="nav-links">
+                <a href="#usage">Usage</a>
+                <a href="#philosophy">Philosophy</a>
+                <a class="docker-link" href="https://hub.docker.com" target="_blank">
+                    🐳 Docker Hub
+                </a>
+            </div>
+
+            <button class="menu-btn" @click="menuOpen = true">☰</button>
+        </div>
+    </nav>
+
+    <!-- MOBILE MENU -->
+    <div x-show="menuOpen" x-transition.opacity @keydown.escape.window="menuOpen = false" class="mobile-menu" x-cloak>
+        <div class="mobile-close" @click="menuOpen = false">✕</div>
+        <a href="#usage" @click="menuOpen = false">Usage</a>
+        <a href="#philosophy" @click="menuOpen = false">Philosophy</a>
+        <a href="https://hub.docker.com" target="_blank">Docker Hub</a>
+    </div>
+
+    <!-- HERO -->
+    <header>
+        <div class="hero">
+            <h1>Sublogue</h1>
+            <p>
+                Context-aware subtitle augmentation.
+                Plot summaries and metadata, inserted without breaking sync.
+            </p>
+        </div>
+    </header>
+    <section class="install-section">
+        <h2>Install with Docker</h2>
+
+        <pre><code>docker pull ghcr.io/yourname/sublogue:latest</code></pre>
+
+        <pre><code>version: "3.8"
+services:
+  sublogue:
+    image: ghcr.io/yourname/sublogue:latest
+    container_name: sublogue
+    volumes:
+      - ./subs:/data/subs
+    restart: unless-stopped
+</code></pre>
+
+        <a href="https://hub.docker.com" target="_blank" class="install-btn">
+            ⬇ View on Docker Hub
+        </a>
+    </section>
+
+    <section class="demo-section">
+        <h2 class="demo-title">What Sublogue adds to your subtitles</h2>
+
+        <div class="demo-card" id="subtitleDemo">
+            <div class="demo-frame active">
+                <div class="demo-header">SUBLOGUE</div>
+                <div class="demo-title-line">Memento (2022)</div>
+                <div class="demo-meta">IMDb 8.0 · RT 54% · 113 min</div>
+                <div class="demo-text">
+                    A man with short-term memory loss attempts to track down his wife’s
+                    murderer using notes, tattoos, and fragmented recollections.
+                </div>
+            </div>
+
+            <div class="demo-frame">
+                <div class="demo-header">SUBLOGUE</div>
+                <div class="demo-title-line">Arrival (2016)</div>
+                <div class="demo-meta">IMDb 7.9 · RT 94% · 116 min</div>
+                <div class="demo-text">
+                    A linguist is recruited to communicate with extraterrestrial visitors
+                    whose arrival challenges humanity’s understanding of time.
+                </div>
+            </div>
+
+            <div class="demo-frame">
+                <div class="demo-header">SUBLOGUE</div>
+                <div class="demo-title-line">Ex Machina (2014)</div>
+                <div class="demo-meta">IMDb 7.7 · RT 92% · 108 min</div>
+                <div class="demo-text">
+                    A programmer evaluates the consciousness of an advanced AI in a
+                    secluded research facility.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHAT IT DOES -->
+    <div class="card">
+        <h2>What it does</h2>
+        <p>
+            Sublogue appends a short, readable plot summary directly into
+            <code>.srt</code> subtitle files at the start of playback.
+            No timing drift. No destructive edits.
+        </p>
+    </div>
+
+    <!-- CONTENT -->
+    <main>
+        <section id="usage">
+            <h2>Basic usage</h2>
+            <pre><code>sublogue scan ./subs</code></pre>
+        </section>
+
+        <section id="philosophy">
+            <h2>Philosophy</h2>
+            <p>
+                Sublogue performs one task, carefully, and then gets out of the way.
+                It is not a downloader. It is not a media manager.
+            </p>
+        </section>
+    </main>
+
+</body>
+<script>
+    (function () {
+        const frames = document.querySelectorAll('#subtitleDemo .demo-frame');
+        let index = 0;
+
+        setInterval(() => {
+            frames[index].classList.remove('active');
+            index = (index + 1) % frames.length;
+            frames[index].classList.add('active');
+        }, 4500);
+    })();
+</script>
+
+
+</html>
