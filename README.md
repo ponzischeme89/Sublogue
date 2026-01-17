@@ -20,7 +20,7 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 ## Screenshots
 <div align="center">
 
-  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_main.png" height="256" width="456">
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_scan.png" height="256" width="456">
   <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_settings.png" height="256" width="456">
 
 </div>
