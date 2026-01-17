@@ -25,7 +25,7 @@ Create `data/` and `media/` folders next to the compose file, then run:
 version: "3.9"
 services:
   sublogue:
-    image: ghcr.io/onzischeme89/sublogue:latest
+    image: ghcr.io/ponzischeme89/sublogue:latest
     container_name: sublogue
     restart: unless-stopped
     environment:
@@ -47,7 +47,8 @@ docker compose up -d
 
 Open `http://localhost:5000`.
 
-### Unraid
+<details>
+  <summary>Unraid</summary>
 
 Use the included template at `unraid-sublogue.xml`.
 
@@ -55,8 +56,10 @@ Use the included template at `unraid-sublogue.xml`.
 - `/mnt/user/appdata/sublogue/media` -> `/media`
 
 Start the container and open `http://<UNRAID-IP>:5000`.
+</details>
 
-### Komodo
+<details>
+  <summary>Komodo</summary>
 
 Create a new stack and paste a Komodo template like this:
 
@@ -64,7 +67,7 @@ Create a new stack and paste a Komodo template like this:
 version: "3.9"
 services:
   sublogue:
-    image: ghcr.io/onzischeme89/sublogue:latest
+    image: ghcr.io/ponzischeme89/sublogue:latest
     container_name: sublogue
 
     ports:
@@ -88,3 +91,4 @@ networks:
   npm_network:
     external: true
 ```
+</details>
