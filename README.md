@@ -10,13 +10,13 @@ Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadat
 
 Why? If the cast and IMDb/RT rating appear in the first minute, movie night involves fewer questions and more watching!
 
-## Core Features
+## Features
 - Insert plot summaries into existing `.srt` files without shifting timings
-- Fetch metadata from OMDb, TMDb, and TVMaze
-- Add runtime, director, cast, and ratings to subtitle headers
+- Fetch metadata from OMDb, TMDb, and TVMaze. Add these as intergrations under Settings before you scan.
+- Add runtime, director, cast, and ratings to subtitle
 - Preserve original dialogue and timing with safe insertion logic
-- Clean, fast web UI for scanning and batch processing built in Svelte
-
+- Clean, fast web UI for scanning and batch processing built in Svelte and Python/Flask backend.
+- Interface has three themes (OLED, Ocean and Dracula White)
 
 ## Screenshots
 <div align="center">
