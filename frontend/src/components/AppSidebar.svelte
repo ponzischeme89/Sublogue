@@ -15,7 +15,7 @@
     History,
   } from "lucide-svelte";
   import ThemeSelector from "./ThemeSelector.svelte";
-  import sublogueLogo from "../assets/logo.png";
+  import sublogueLogo from "../assets/sublogue_v2.png";
 
   export let currentView = "scanner";
   export let onNavigate;
@@ -36,21 +36,26 @@
     <div
       class={`relative flex items-center gap-3 py-5 ${collapsed ? "px-2" : "px-4"}`}
     >
-      <div
-        class="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/40 overflow-hidden"
-      >
-        <span class="absolute inset-0 rounded-lg bg-blue-500/10 blur-md"></span>
+      {#if collapsed}
+        <div
+          class="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/40 overflow-hidden"
+        >
+          <span class="absolute inset-0 rounded-lg bg-blue-500/10 blur-md"
+          ></span>
 
-        <img
-          src={sublogueLogo}
-          alt="Sublogue"
-          class="relative h-full w-full object-cover"
-        />
-      </div>
-
-      {#if !collapsed}
-        <div>
-          <div class="text-[15pt] font-bold tracking-tight">Sublogue</div>
+          <img
+            src={sublogueLogo}
+            alt="Sublogue"
+            class="relative h-full w-full object-cover"
+          />
+        </div>
+      {:else}
+        <div class="flex items-center -ml-6">
+          <img
+            src={sublogueLogo}
+            alt="Sublogue"
+            class="h-9 w-auto max-w-[220px] object-contain"
+          />
         </div>
       {/if}
       <button
