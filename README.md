@@ -11,8 +11,8 @@ Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadat
 Why? If the cast and IMDb/RT rating appear in the first minute, movie night involves fewer questions and more watching!
 <div align="center">
 
-  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/sublogue_v2.png" height="256" width="456">
-
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_main.png" height="256" width="456">
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_settings.png" height="256" width="456">
 
 </div>
 
