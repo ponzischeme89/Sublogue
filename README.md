@@ -27,7 +27,7 @@ Why? If the cast and IMDb/RT rating appear in the first minute, movie night invo
 </div>
 
 ## Getting started
-
+To get started installing Sublogue, expand on your posion below. Personally, I recommend Komodo. It's great. 
 <details>
 <summary>⚓ Docker Compose</summary>
 Create `data/` and `media/` folders next to the compose file, then run:
