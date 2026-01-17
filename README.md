@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/sublogue_logo.png" height="700" width="456">
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/sublogue_v2.png" height="256" width="456">
 
   <h4>Your subtitles deserve metadata. Sublogue adds it.</h4>
 
@@ -13,8 +13,7 @@ Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadat
 - Fetch metadata from OMDb, TMDb, and TVMaze
 - Add runtime, director, cast, and ratings to subtitle headers
 - Preserve original dialogue and timing with safe insertion logic
-- Clean, fast web UI for scanning and batch processing
-- Docker-first deployment with persistent storage
+- Clean, fast web UI for scanning and batch processing built in Svelte
 
 ## Getting started
 
@@ -26,7 +25,7 @@ Create `data/` and `media/` folders next to the compose file, then run:
 version: "3.9"
 services:
   sublogue:
-    image: ponzischeme89/sublogue:latest
+    image: ghcr.io/onzischeme89/sublogue:latest
     container_name: sublogue
     restart: unless-stopped
     environment:
@@ -65,7 +64,7 @@ Create a new stack and paste a Komodo template like this:
 version: "3.9"
 services:
   sublogue:
-    image: ponzischeme89/sublogue:latest
+    image: ghcr.io/onzischeme89/sublogue:latest
     container_name: sublogue
 
     ports:
