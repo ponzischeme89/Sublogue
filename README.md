@@ -92,3 +92,7 @@ networks:
     external: true
 ```
 </details>
+
+## Support
+- Help spread the word about Sublogue by telling your friends about this repo
+- Give the repo a star (This really helps)
