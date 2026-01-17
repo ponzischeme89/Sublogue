@@ -9,12 +9,6 @@
 Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadata from OMDb, TMDB, or TVMaze and automatically append plot summaries, runtimes, directors, and cast details to the start or end of your subtitles. 
 
 Why? If the cast and IMDb/RT rating appear in the first minute, movie night involves fewer questions and more watching!
-<div align="center">
-
-  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_main.png" height="256" width="456">
-  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_settings.png" height="256" width="456">
-
-</div>
 
 ## Core Features
 - Insert plot summaries into existing `.srt` files without shifting timings
@@ -22,6 +16,15 @@ Why? If the cast and IMDb/RT rating appear in the first minute, movie night invo
 - Add runtime, director, cast, and ratings to subtitle headers
 - Preserve original dialogue and timing with safe insertion logic
 - Clean, fast web UI for scanning and batch processing built in Svelte
+
+
+## Screenshots
+<div align="center">
+
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_main.png" height="256" width="456">
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/screenshots/screenshot_settings.png" height="256" width="456">
+
+</div>
 
 ## Getting started
 
