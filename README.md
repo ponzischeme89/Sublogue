@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/sublogue_logo.png" height="456" width="456">
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/sublogue_logo.png" height="700" width="456">
 
   <h4>Your subtitles deserve metadata. Sublogue adds it.</h4>
 
