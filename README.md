@@ -16,7 +16,10 @@ If you’ve ever opened a movie or episode and thought “wait… what was this 
 - Fast Python backend (Flask + aiohttp)
 - Docker image available through GHCR
 
-## Docker Compose
+## Deployment
+
+<details>
+  <summary>Docker Compose</summary>
 
 Create `data/` and `media/` folders next to the compose file, then run:
 
@@ -43,8 +46,10 @@ Then start it with:
 ```bash
 docker compose up -d
 ```
+</details>
 
-## Unraid
+<details>
+  <summary>Unraid</summary>
 
 Sublogue includes an Unraid template at `unraid-sublogue.xml`. Import it in Unraid's Docker UI, then map:
 
@@ -52,6 +57,41 @@ Sublogue includes an Unraid template at `unraid-sublogue.xml`. Import it in Unra
 - `/mnt/user/appdata/sublogue/media` -> `/media`
 
 Start the container and open `http://<UNRAID-IP>:5000`.
+</details>
+
+<details>
+  <summary>Komodo</summary>
+
+Create a new stack in Komodo and paste a template like this (example format below):
+
+```yaml
+version: "3.9"
+services:
+  shelfarr:
+    image: ghcr.io/ponzischeme89/sublogue:latest
+    container_name: sublogue
+
+    ports:
+      - "5055:5055"
+
+    environment:
+      - TZ=Pacific/Auckland
+      - PORT=5055
+
+    volumes:
+      - /volume1/Docker/sublogue/data:/data
+      - /share/subtitles:/audiobooks
+
+    restart: unless-stopped
+
+    networks:
+      - npm_network
+
+networks:
+  npm_network:
+    external: true
+```
+</details>
 
 ## Acknowledgements
 
