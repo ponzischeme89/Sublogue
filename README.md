@@ -1,25 +1,24 @@
-# Sublogue
+<div align="center">
 
-Sublogue is a lightweight tool for adding plot summaries and metadata to subtitle files.
+  <img src="https://github.com/ponzischeme89/Sublogue/blob/master/docs/sublogue_logo.png" height="256" width="256">
 
-It takes an existing .srt, pulls data from OMDb, TMDb, and TVMaze, and inserts a short plot block at the start of the file — without altering any existing timings or dialogue.
+  <h4>Your subtitles deserve metadata. Sublogue adds it.</h4>
 
-If you’ve ever opened a movie or episode and thought “wait… what was this again?”, Sublogue quietly solves that.
+</div>
 
-## Features
+Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadata from OMDb, TMDB, or TVMaze and automatically append plot summaries, runtimes, directors, and cast details to the start or end of your subtitles. 
 
-- Inserts a plot summary at the beginning of an existing `.srt`
-- Automatically fetches metadata (OMDb, TMDb, TVMaze fallback)
-- Never alters existing dialogue timing
-- Handles long plots without breaking readability
-- Clean web UI (Svelte + Vite)
-- Fast Python backend (Flask + aiohttp)
-- Docker image available through GHCR
+## Core Features
+- Insert plot summaries into existing `.srt` files without shifting timings
+- Fetch metadata from OMDb, TMDb, and TVMaze
+- Add runtime, director, cast, and ratings to subtitle headers
+- Preserve original dialogue and timing with safe insertion logic
+- Clean, fast web UI for scanning and batch processing
+- Docker-first deployment with persistent storage
 
-## Deployment
+## Getting started
 
-<details>
-  <summary>Docker Compose</summary>
+### Docker
 
 Create `data/` and `media/` folders next to the compose file, then run:
 
@@ -41,46 +40,45 @@ services:
       - "5000:5000"
 ```
 
-Then start it with:
+Start the stack:
 
 ```bash
 docker compose up -d
 ```
-</details>
 
-<details>
-  <summary>Unraid</summary>
+Open `http://localhost:5000`.
 
-Sublogue includes an Unraid template at `unraid-sublogue.xml`. Import it in Unraid's Docker UI, then map:
+### Unraid
+
+Use the included template at `unraid-sublogue.xml`.
 
 - `/mnt/user/appdata/sublogue` -> `/config`
 - `/mnt/user/appdata/sublogue/media` -> `/media`
 
 Start the container and open `http://<UNRAID-IP>:5000`.
-</details>
 
-<details>
-  <summary>Komodo</summary>
+### Komodo
 
-Create a new stack in Komodo and paste a template like this (example format below):
+Create a new stack and paste a Komodo template like this:
 
 ```yaml
 version: "3.9"
 services:
-  shelfarr:
-    image: ghcr.io/ponzischeme89/sublogue:latest
+  sublogue:
+    image: ponzischeme89/sublogue:latest
     container_name: sublogue
 
     ports:
-      - "5055:5055"
+      - "5000:5000"
 
     environment:
-      - TZ=Pacific/Auckland
-      - PORT=5055
+      - TZ=Etc/UTC
+      - PUID=1000
+      - PGID=1000
 
     volumes:
-      - /volume1/Docker/sublogue/data:/data
-      - /share/subtitles:/audiobooks
+      - /volume1/Docker/sublogue/data:/config
+      - /volume1/Media:/media
 
     restart: unless-stopped
 
@@ -91,10 +89,3 @@ networks:
   npm_network:
     external: true
 ```
-</details>
-
-## Acknowledgements
-
-- Svelte for the frontend UI.
-- Flask for the backend API.
-- asyncio for async metadata fetching.
