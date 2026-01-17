@@ -67,6 +67,7 @@ build/
 .svelte-kit/
 .vite/
 .cache/
+.claude/
 
 # Lockfiles (optional — keep if you want deterministic builds)
 # package-lock.json
