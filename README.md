@@ -8,6 +8,8 @@
 
 Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadata from OMDb, TMDB, or TVMaze and automatically append plot summaries, runtimes, directors, and cast details to the start or end of your subtitles. 
 
+Why? If the cast and IMDb/RT rating appear in the first minute, movie night involves fewer questions and more watching!
+
 ## Core Features
 - Insert plot summaries into existing `.srt` files without shifting timings
 - Fetch metadata from OMDb, TMDb, and TVMaze
