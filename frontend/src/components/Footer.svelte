@@ -61,7 +61,7 @@
         <!-- Left -->
         <div class="flex items-center gap-3 text-[11px]">
           <span class="font-medium text-text-primary tracking-tight">
-            Sublogue Version: v1.0.2
+            Sublogue Version: v1.0.3 Release Candiate
           </span>
           <span class="hidden sm:inline opacity-30">•</span>
           <span class="text-text-secondary"> Open source (AGPL-3.0) </span>
@@ -73,28 +73,12 @@
         <div class="flex items-center gap-6">
           <span class="flex items-center gap-2">
             <a
-              href="https://shelfarr.app/"
+              href="https://github.com/ponzischeme89/Sublogue"
               target="_blank"
               rel="noopener noreferrer"
               class="text-text-secondary hover:text-text-primary transition-colors underline-offset-4 hover:underline"
             >
               Github
-            </a>
-            <a
-              href="https://shelfarr.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-text-secondary hover:text-text-primary transition-colors underline-offset-4 hover:underline"
-            >
-              Discord
-            </a>
-            <a
-              href="https://shelfarr.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-text-secondary hover:text-text-primary transition-colors underline-offset-4 hover:underline"
-            >
-              Documentation
             </a>
           </span>
         </div>

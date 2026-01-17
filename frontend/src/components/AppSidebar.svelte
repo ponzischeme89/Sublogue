@@ -12,7 +12,7 @@
     Package,
     Scan,
     Settings,
-    History
+    History,
   } from "lucide-svelte";
   import ThemeSelector from "./ThemeSelector.svelte";
   import sublogueLogo from "../assets/logo.png";
@@ -152,13 +152,15 @@
       >
         {#if !collapsed}
           <span class="text-text-tertiary">Version</span>
-          <Badge className="bg-white/10 text-text-secondary">v1.0.2</Badge>
+          <Badge className="bg-white/10 text-text-secondary"
+            >v1.0.2 Release Candiate</Badge
+          >
         {:else}
           <Badge className="bg-white/10 text-text-secondary">v</Badge>
         {/if}
       </div>
       <a
-        href="https://github.com/yourusername/sublogue/releases"
+        href="https://github.com/ponzischeme89/Sublogue/releases"
         target="_blank"
         rel="noopener noreferrer"
         class={`inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-xs text-text-tertiary hover:text-white hover:bg-[color:var(--bg-hover)] transition-colors ${collapsed ? "justify-center" : "gap-2"}`}
@@ -169,7 +171,7 @@
         {/if}
       </a>
       <a
-        href="https://github.com/yourusername/sublogue"
+        href="https://github.com/ponzischeme89/Sublogue"
         target="_blank"
         rel="noopener noreferrer"
         class={`inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-xs text-text-tertiary hover:text-white hover:bg-[color:var(--bg-hover)] transition-colors ${collapsed ? "justify-center" : "gap-2"}`}
@@ -177,29 +179,6 @@
         <Github class="h-4 w-4" />
         {#if !collapsed}
           GitHub
-        {/if}
-      </a>
-      <a
-        href="https://hub.docker.com/r/yourusername/sublogue"
-        target="_blank"
-        rel="noopener noreferrer"
-        class={`inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-xs text-text-tertiary hover:text-white hover:bg-[color:var(--bg-hover)] transition-colors ${collapsed ? "justify-center" : "gap-2"}`}
-      >
-        <Package class="h-4 w-4" />
-        {#if !collapsed}
-          DockerHub
-        {/if}
-      </a>
-      <a
-        href="https://www.buymeacoffee.com/sublogue"
-        target="_blank"
-        rel="noopener noreferrer"
-        class={`inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-xs text-text-tertiary hover:text-red-200 hover:bg-[color:var(--bg-hover)] transition-colors ${collapsed ? "justify-center" : "gap-2"}`}
-        title="Support Sublogue"
-      >
-        <Heart class="h-4 w-4" />
-        {#if !collapsed}
-          Support
         {/if}
       </a>
     </div>
