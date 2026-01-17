@@ -1,0 +1,176 @@
+# ============================================================
+# GLOBAL / OS JUNK
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# ============================================================
+# PYTHON
+# ============================================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Python databases (DO NOT COMMIT)
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================
+# NODE / JAVASCRIPT / SVELTE / VITE
+# ============================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.out/
+.svelte-kit/
+.vite/
+.cache/
+
+# Lockfiles (optional — keep if you want deterministic builds)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ============================================================
+# FRONTEND (explicit paths)
+# ============================================================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.svelte-kit/
+frontend/.vite/
+frontend/.cache/
+
+# ============================================================
+# BACKEND (explicit paths)
+# ============================================================
+server/__pycache__/
+server/**/*.pyc
+server/**/*.pyo
+server/**/*.pyd
+server/*.db
+server/*.sqlite3
+
+# ============================================================
+# AI / LLM / CLAUDE / TEMP JUNK (ABSOLUTELY NOT)
+# ============================================================
+tmpclaude-*
+tmpclaude-*-cwd
+*claude*-cwd
+*claude-temp*
+*claude_cache*
+*llm_tmp*
+*ai_tmp*
+*.prompt
+*.llm
+
+# ============================================================
+# DATABASE / RUNTIME DATA
+# ============================================================
+data/
+db/
+storage/
+uploads/
+.cache/
+.tmp/
+
+# ============================================================
+# ENV / SECRETS
+# ============================================================
+.env
+.env.*
+*.env
+
+*.key
+*.pem
+*.crt
+*.cert
+*.pfx
+*.keystore
+
+# ============================================================
+# DOCKER
+# ============================================================
+.dockerignore
+docker-compose.override.yml
+
+# Docker runtime junk
+**/docker-data/
+**/container-data/
+
+# ============================================================
+# IDE / EDITOR
+# ============================================================
+.idea/
+*.iml
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+*.code-workspace
+
+# ============================================================
+# CI / RELEASE
+# ============================================================
+coverage.xml
+report.xml
+junit.xml
+
+# ============================================================
+# MISC PROJECT-SPECIFIC
+# ============================================================
+*.stackdump
+*.orig
+*.rej
+
+# Temporary working dirs
+tmp/
+temp/
+
+# ============================================================
+# GIT ITSELF
+# ============================================================
+.git-rewrite/
