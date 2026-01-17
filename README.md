@@ -101,6 +101,12 @@ networks:
 ```
 </details>
 
+## Roadmap
+- [x] Add support for TVMaze  
+- [ ] Add support for more themes  
+- [ ] Bring in posters into results list so it's easier to identify movies / TV shows
+
 ## Support
 - Help spread the word about Sublogue by telling your friends about this repo
 - Give the repo a star (This really helps)
+- Check out my other project, which is an open source renamer tool.
