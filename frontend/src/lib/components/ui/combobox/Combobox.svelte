@@ -11,6 +11,8 @@
   export let placeholder = 'Select...'
   export let disabled = false
   export let className = ''
+  export let searchable = true
+  export let dropup = false
 
   let open = false
   let search = ''
@@ -22,10 +24,12 @@
     items.find((item) => item.value === itemValue)?.label
 
   $: selectedLabel = getLabel(value)
-  $: filteredItems = items.filter((item) => {
-    const haystack = `${item.label} ${item.description || ''}`.toLowerCase()
-    return haystack.includes(search.toLowerCase())
-  })
+  $: filteredItems = searchable
+    ? items.filter((item) => {
+        const haystack = `${item.label} ${item.description || ''}`.toLowerCase()
+        return haystack.includes(search.toLowerCase())
+      })
+    : items
 
   function toggle() {
     if (!disabled) open = !open
@@ -105,16 +109,20 @@
 
   {#if open}
     <div
-      class="absolute top-full mt-2 left-0 min-w-[220px] w-[92%] rounded-lg border border-border bg-card shadow-2xl overflow-hidden z-50"
+      class="absolute left-0 min-w-[220px] w-[92%] rounded-lg border border-border bg-card shadow-2xl overflow-hidden z-50 {dropup
+        ? 'bottom-full mb-2'
+        : 'top-full mt-2'}"
     >
-      <div class="p-2 border-b border-border bg-muted/40">
-        <Input
-          value={search}
-          on:input={(e) => (search = e.target.value)}
-          placeholder="Search..."
-          className="h-9 text-[12px]"
-        />
-      </div>
+      {#if searchable}
+        <div class="p-2 border-b border-border bg-muted/40">
+          <Input
+            value={search}
+            on:input={(e) => (search = e.target.value)}
+            placeholder="Search..."
+            className="h-9 text-[12px]"
+          />
+        </div>
+      {/if}
       <div class="max-h-56 overflow-y-auto py-1">
         {#if filteredItems.length === 0}
           <div class="px-4 py-3 text-xs text-text-tertiary">

@@ -1,513 +1,452 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Sublogue — Documentation</title>
-
-    <!-- Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-        rel="stylesheet">
-
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <style>
-        :root {
-            --bg: #0b0b0c;
-            --bg-soft: #0f1115;
-            --fg: #e5e7eb;
-            --muted: #9ca3af;
-            --soft: #cbd5e1;
-            --accent: #7dd3fc;
-            --accent-strong: #38bdf8;
-            --border: rgba(255, 255, 255, 0.08);
-            --card: rgba(255, 255, 255, 0.04);
-            --code-bg: #050506;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            margin: 0;
-            font-family: Inter, system-ui, sans-serif;
-            background:
-                radial-gradient(900px 400px at 50% -10%, #0f172a44, transparent 70%),
-                var(--bg);
-            color: var(--fg);
-            line-height: 1.7;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        /* ---------------- NAV ---------------- */
-        nav {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(11, 11, 12, 0.75);
-            backdrop-filter: blur(14px);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .nav-inner {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0.9rem 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-        }
-
-        .logo {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: linear-gradient(145deg, #38bdf8, #0ea5e9);
-            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
-            animation: logoPulse 6s ease-in-out infinite;
-        }
-
-        @keyframes logoPulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.06);
-            }
-        }
-
-        .nav-links {
-            display: none;
-            gap: 1.5rem;
-            align-items: center;
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-
-        .docker-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.7rem;
-            border-radius: 8px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            font-size: 0.85rem;
-            transition: background 0.2s ease, transform 0.2s ease;
-        }
-
-        .docker-link:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-1px);
-        }
-
-        .menu-btn {
-            background: none;
-            border: none;
-            color: var(--fg);
-            font-size: 1.4rem;
-            cursor: pointer;
-        }
-
-        @media (min-width: 768px) {
-            .nav-links {
-                display: flex;
-            }
-
-            .menu-btn {
-                display: none;
-            }
-        }
-
-        /* ---------------- MOBILE MENU ---------------- */
-        .mobile-menu {
-            position: fixed;
-            inset: 0;
-            background: rgba(11, 11, 12, 0.96);
-            backdrop-filter: blur(18px);
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            padding: 2.5rem 2rem;
-        }
-
-        .mobile-menu a {
-            font-size: 1.5rem;
-            margin: 1rem 0;
-            font-weight: 600;
-        }
-
-        .mobile-close {
-            align-self: flex-end;
-            font-size: 1.8rem;
-            cursor: pointer;
-            opacity: 0.8;
-        }
-
-        /* ---------------- HERO ---------------- */
-        header {
-            position: relative;
-            overflow: hidden;
-            padding: 4.5rem 1.25rem 3.5rem;
-        }
-
-        header::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(120deg,
-                    transparent 30%,
-                    rgba(125, 211, 252, 0.12),
-                    transparent 70%);
-            opacity: 0;
-            animation: headerGlow 7s ease-in-out infinite;
-            pointer-events: none;
-        }
-
-        @keyframes headerGlow {
-
-            0%,
-            100% {
-                opacity: 0;
-            }
-
-            50% {
-                opacity: 1;
-            }
-        }
-
-        .hero {
-            max-width: 720px;
-            margin: 0 auto;
-            animation: fadeUp 0.8s ease both;
-        }
-
-        .hero h1 {
-            font-size: 2.6rem;
-            font-weight: 800;
-            letter-spacing: -0.04em;
-            margin-bottom: 0.75rem;
-        }
-
-        .hero p {
-            color: var(--muted);
-            font-size: 1.05rem;
-            max-width: 520px;
-        }
-
-        /* ---------------- ANIMATIONS ---------------- */
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(14px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation: none !important;
-                transition: none !important;
-            }
-        }
-
-        /* ---------------- CARD ---------------- */
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.6rem;
-            margin: 2rem auto;
-            max-width: 720px;
-            animation: fadeUp 0.6s ease both;
-        }
-
-        .card h2 {
-            font-size: 1.25rem;
-            margin-bottom: 0.6rem;
-        }
-
-        .card p {
-            color: var(--soft);
-        }
-
-        /* ---------------- MAIN ---------------- */
-        main {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: 2rem 1.25rem 6rem;
-        }
-
-        pre {
-            background: var(--code-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.1rem;
-            overflow-x: auto;
-            margin: 1.5rem 0;
-        }
-
-        code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            color: #bae6fd;
-        }
-
-        .install-section {
-            max-width: 720px;
-            margin: 5rem auto;
-            padding: 0 1.25rem;
-        }
-
-        .install-btn {
-            display: inline-block;
-            margin-top: 1.5rem;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: #041b0f;
-            font-weight: 700;
-            padding: 0.75rem 1.2rem;
-            border-radius: 10px;
-            text-decoration: none;
-            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.35);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .install-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 40px rgba(34, 197, 94, 0.45);
-        }
-
-        .demo-section {
-            max-width: 720px;
-            margin: 5rem auto;
-            padding: 0 1.25rem;
-        }
-
-        .demo-title {
-            font-size: 1.4rem;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.01em;
-        }
-
-        .demo-card {
-            position: relative;
-            background: #050506;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 1.5rem;
-            min-height: 180px;
-            overflow: hidden;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
-        }
-
-        .demo-frame {
-            position: absolute;
-            inset: 0;
-            padding: 1.5rem;
-            opacity: 0;
-            transform: translateY(8px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-
-        .demo-frame.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .demo-header {
-            font-family: "IBM Plex Sans", sans-serif;
-            font-size: 0.7rem;
-            letter-spacing: 0.15em;
-            opacity: 0.5;
-            margin-bottom: 0.4rem;
-        }
-
-        .demo-title-line {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .demo-meta {
-            font-family: "IBM Plex Sans", sans-serif;
-            font-size: 0.85rem;
-            color: #9ca3af;
-            margin-bottom: 0.6rem;
-        }
-
-        .demo-text {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #cbd5e1;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sublogue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            body: ["Inter", "sans-serif"],
+            display: ["Space Grotesk", "sans-serif"],
+            mono: ["IBM Plex Mono", "monospace"],
+          },
+          colors: {
+            night: {
+              900: "#000000",
+              800: "#07090d",
+              700: "#0c1018",
+              600: "#121826",
+              500: "#182235",
+            },
+            ember: {
+              500: "#ff6b3d",
+              600: "#e95a2e",
+            },
+          },
+          boxShadow: {
+            glow: "0 0 30px rgba(255, 107, 61, 0.25)",
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
-<body x-data="{ menuOpen: false }">
-
-    <!-- NAV -->
-    <nav>
-        <div class="nav-inner">
-            <div class="brand">
-                <div class="logo"></div>
-                Sublogue
-            </div>
-
-            <div class="nav-links">
-                <a href="#usage">Usage</a>
-                <a href="#philosophy">Philosophy</a>
-                <a class="docker-link" href="https://hub.docker.com" target="_blank">
-                    🐳 Docker Hub
-                </a>
-            </div>
-
-            <button class="menu-btn" @click="menuOpen = true">☰</button>
+<body class="bg-night-900 text-slate-100 font-body overflow-x-hidden">
+  <div class="min-h-screen bg-night-900">
+    <header class="border-b border-white/10" x-data="{ open: false }">
+      <div
+        class="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-between">
+        <div class="flex w-full items-center justify-between gap-4 md:w-auto">
+          <img src="sublogue_v2.png" alt="Sublogue" class="h-10 w-auto max-w-full sm:h-12" />
+          <div class="min-w-0">
+            <p class="text-lg font-semibold tracking-wide font-display">Sublogue</p>
+            <p class="text-sm text-slate-400 truncate">Subtitle metadata orchestration</p>
+          </div>
+          <button
+            class="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-night-800/80 text-slate-200 transition hover:border-ember-500/60 hover:text-white md:hidden"
+            type="button" aria-label="Toggle menu" aria-controls="mobile-menu" :aria-expanded="open.toString()"
+            @click="open = !open">
+            <i data-lucide="menu" class="h-5 w-5"></i>
+          </button>
         </div>
-    </nav>
-
-    <!-- MOBILE MENU -->
-    <div x-show="menuOpen" x-transition.opacity @keydown.escape.window="menuOpen = false" class="mobile-menu" x-cloak>
-        <div class="mobile-close" @click="menuOpen = false">✕</div>
-        <a href="#usage" @click="menuOpen = false">Usage</a>
-        <a href="#philosophy" @click="menuOpen = false">Philosophy</a>
-        <a href="https://hub.docker.com" target="_blank">Docker Hub</a>
-    </div>
-
-    <!-- HERO -->
-    <header>
-        <div class="hero">
-            <h1>Sublogue</h1>
-            <p>
-                Context-aware subtitle augmentation.
-                Plot summaries and metadata, inserted without breaking sync.
-            </p>
+        <div class="hidden flex-wrap items-center justify-start gap-3 md:flex md:justify-end">
+          <a class="text-sm text-slate-300 hover:text-white" href="#install">Install</a>
+          <a class="text-sm text-slate-300 hover:text-white" href="#integrations">Integrations</a>
+          <a class="rounded-full border border-ember-500/60 px-4 py-2 text-sm font-semibold text-ember-500 hover:bg-ember-500 hover:text-night-900"
+            href="#quickstart">Quickstart</a>
         </div>
+        <div id="mobile-menu" x-show="open" x-cloak x-transition.scale.origin.top.duration.200ms
+          class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-night-800/90 p-4 text-sm shadow-2xl md:hidden">
+          <a class="text-slate-200 hover:text-white" href="#install" @click="open = false">Install</a>
+          <a class="text-slate-200 hover:text-white" href="#integrations" @click="open = false">Integrations</a>
+          <a class="rounded-full border border-ember-500/60 px-4 py-2 text-center font-semibold text-ember-500 hover:bg-ember-500 hover:text-night-900"
+            href="#quickstart" @click="open = false">Quickstart</a>
+        </div>
+      </div>
     </header>
-    <section class="install-section">
-        <h2>Install with Docker</h2>
 
-        <pre><code>docker pull ghcr.io/yourname/sublogue:latest</code></pre>
+    <main class="mx-auto max-w-6xl px-4 sm:px-6">
+      <section class="grid gap-10 pb-12 pt-12 md:pb-14 md:pt-16 lg:grid-cols-[1.2fr_0.8fr]">
+        <div>
+          <h1 class="mt-5 text-3xl font-semibold leading-tight font-display sm:text-4xl md:text-5xl">
+            Add metadata to your subtitles with Sublogue
+          </h1>
+          <p class="mt-6 text-base text-slate-300 sm:text-lg">
+            Sublogue inserts story context into your subtitle files using OMDb, TMDb, and TVMaze. It can also
+            clean out ad blocks like YTS promo text while preserving timing, so every subtitle reads cleanly.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <span class="rounded-full border border-white/15 px-4 py-2 text-xs font-mono uppercase">SRT safe</span>
+            <span class="rounded-full border border-white/15 px-4 py-2 text-xs font-mono uppercase">Multi-source</span>
+            <span class="rounded-full border border-white/15 px-4 py-2 text-xs font-mono uppercase">Batch scans</span>
+            <span class="rounded-full border border-white/15 px-4 py-2 text-xs font-mono uppercase">Web UI</span>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-white/10 bg-night-800/70 p-6 shadow-xl sm:p-7">
+          <div class="flex items-center gap-3">
+            <i data-lucide="sparkles" class="h-6 w-6 text-ember-500"></i>
+            <h2 class="text-lg font-semibold font-display">Overview</h2>
+          </div>
+          <p class="mt-4 text-sm text-slate-300">
+            Sublogue scans your subtitle folders, pulls metadata from OMDb, TMDb, and TVMaze, then injects plots,
+            ratings, and credits directly into SRT files without touching timing.
+          </p>
+          <ul class="mt-5 space-y-3 text-sm text-slate-300">
+            <li class="flex items-start gap-3">
+              <i data-lucide="check" class="mt-1 h-4 w-4 text-ember-500"></i>
+              Preserve original subtitle timing while enriching content.
+            </li>
+            <li class="flex items-start gap-3">
+              <i data-lucide="check" class="mt-1 h-4 w-4 text-ember-500"></i>
+              Remove ad text and promo lines from SRT files (YTS and similar).
+            </li>
+            <li class="flex items-start gap-3">
+              <i data-lucide="check" class="mt-1 h-4 w-4 text-ember-500"></i>
+              Choose preferred metadata sources per scan.
+            </li>
+            <li class="flex items-start gap-3">
+              <i data-lucide="check" class="mt-1 h-4 w-4 text-ember-500"></i>
+              Monitor integration usage and cache clearing in settings.
+            </li>
+          </ul>
+        </div>
+      </section>
 
-        <pre><code>version: "3.8"
+      <section id="quickstart" class="mb-12 rounded-3xl border border-white/10 bg-night-800/60 p-6 sm:p-8 md:mb-16">
+        <div class="flex items-center gap-3">
+          <i data-lucide="terminal" class="h-6 w-6 text-ember-500"></i>
+          <h2 class="text-2xl font-semibold font-display">Quickstart</h2>
+        </div>
+        <p class="mt-4 text-sm text-slate-300 sm:text-base">
+          Launch the container, point Sublogue at your media folder, then open the UI and run a scan.
+        </p>
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+          <div class="rounded-2xl border border-white/10 bg-night-900/80 p-5">
+            <p class="text-xs font-mono uppercase text-slate-400">Docker CLI</p>
+            <pre
+              class="mt-4 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl border border-white/10 bg-night-900/90 p-4 text-xs font-mono leading-relaxed text-emerald-200 shadow-[0_12px_30px_rgba(0,0,0,0.45)] sm:text-sm sm:whitespace-pre"><code>docker run -d \
+  --name sublogue \
+  -p 5000:5000 \
+  -e TZ=Etc/UTC \
+  -e PUID=1000 -e PGID=1000 \
+  -v ./data:/config \
+  -v ./media:/media \
+  ponzischeme89/sublogue:latest</code></pre>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-night-900/80 p-5">
+            <p class="text-xs font-mono uppercase text-slate-400">Open UI</p>
+            <div class="mt-4 flex items-center gap-3 text-sm text-slate-200">
+              <i data-lucide="globe" class="h-5 w-5 text-ember-500"></i>
+              http://localhost:5000
+            </div>
+            <p class="mt-4 text-sm text-slate-300">
+              Head to Settings -> Integrations to add your metadata providers and start scanning.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="install" class="mb-12 md:mb-16">
+        <div class="flex items-center gap-3">
+          <i data-lucide="download" class="h-6 w-6 text-ember-500"></i>
+          <h2 class="text-2xl font-semibold font-display">Install</h2>
+        </div>
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <h3 class="text-lg font-semibold font-display">🐳 Docker Compose</h3>
+            <p class="mt-3 text-sm text-slate-300">
+              Ideal for Portainer, Synology, or homelab setups.
+            </p>
+            <pre
+              class="mt-4 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl border border-white/10 bg-night-900/90 p-4 text-[0.7rem] font-mono leading-relaxed text-emerald-200 shadow-[0_12px_30px_rgba(0,0,0,0.45)] sm:text-xs sm:whitespace-pre"><code>version: "3.9"
 services:
   sublogue:
-    image: ghcr.io/yourname/sublogue:latest
+    image: ponzischeme89/sublogue:latest
     container_name: sublogue
-    volumes:
-      - ./subs:/data/subs
     restart: unless-stopped
-</code></pre>
-
-        <a href="https://hub.docker.com" target="_blank" class="install-btn">
-            ⬇ View on Docker Hub
-        </a>
-    </section>
-
-    <section class="demo-section">
-        <h2 class="demo-title">What Sublogue adds to your subtitles</h2>
-
-        <div class="demo-card" id="subtitleDemo">
-            <div class="demo-frame active">
-                <div class="demo-header">SUBLOGUE</div>
-                <div class="demo-title-line">Memento (2022)</div>
-                <div class="demo-meta">IMDb 8.0 · RT 54% · 113 min</div>
-                <div class="demo-text">
-                    A man with short-term memory loss attempts to track down his wife’s
-                    murderer using notes, tattoos, and fragmented recollections.
-                </div>
-            </div>
-
-            <div class="demo-frame">
-                <div class="demo-header">SUBLOGUE</div>
-                <div class="demo-title-line">Arrival (2016)</div>
-                <div class="demo-meta">IMDb 7.9 · RT 94% · 116 min</div>
-                <div class="demo-text">
-                    A linguist is recruited to communicate with extraterrestrial visitors
-                    whose arrival challenges humanity’s understanding of time.
-                </div>
-            </div>
-
-            <div class="demo-frame">
-                <div class="demo-header">SUBLOGUE</div>
-                <div class="demo-title-line">Ex Machina (2014)</div>
-                <div class="demo-meta">IMDb 7.7 · RT 92% · 108 min</div>
-                <div class="demo-text">
-                    A programmer evaluates the consciousness of an advanced AI in a
-                    secluded research facility.
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- WHAT IT DOES -->
-    <div class="card">
-        <h2>What it does</h2>
-        <p>
-            Sublogue appends a short, readable plot summary directly into
-            <code>.srt</code> subtitle files at the start of playback.
-            No timing drift. No destructive edits.
-        </p>
-    </div>
-
-    <!-- CONTENT -->
-    <main>
-        <section id="usage">
-            <h2>Basic usage</h2>
-            <pre><code>sublogue scan ./subs</code></pre>
-        </section>
-
-        <section id="philosophy">
-            <h2>Philosophy</h2>
-            <p>
-                Sublogue performs one task, carefully, and then gets out of the way.
-                It is not a downloader. It is not a media manager.
+    environment:
+      - TZ=Etc/UTC
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./data:/config
+      - ./media:/media
+    ports:
+      - "5000:5000"</code></pre>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <h3 class="text-lg font-semibold font-display">🧰 Unraid</h3>
+            <p class="mt-3 text-sm text-slate-300">
+              Use the bundled template and map volumes into /config and /media.
             </p>
-        </section>
+            <div class="mt-4 rounded-2xl border border-white/10 bg-night-900/70 p-4 text-sm text-slate-200">
+              <p>/mnt/user/appdata/sublogue -> /config</p>
+              <p class="mt-2">/mnt/user/media -> /media</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <h3 class="text-lg font-semibold font-display">🐲 Komodo</h3>
+            <p class="mt-3 text-sm text-slate-300">
+              Paste a stack template and attach the NPM network.
+            </p>
+            <pre
+              class="mt-4 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl border border-white/10 bg-night-900/90 p-4 text-[0.7rem] font-mono leading-relaxed text-emerald-200 shadow-[0_12px_30px_rgba(0,0,0,0.45)] sm:text-xs sm:whitespace-pre"><code>version: "3.9"
+services:
+  sublogue:
+    image: ponzischeme89/sublogue:latest
+    container_name: sublogue
+    environment:
+      - TZ=Etc/UTC
+    ports:
+      - "5000:5000"
+    volumes:
+      - /volume1/Docker/sublogue/data:/config
+      - /volume1/Media:/media
+    restart: unless-stopped
+    networks:
+      - npm_network
+networks:
+  npm_network:
+    external: true</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="clean-srts" class="mb-12 md:mb-16">
+        <div class="flex items-center gap-3">
+          <i data-lucide="eraser" class="h-6 w-6 text-ember-500"></i>
+          <h2 class="text-2xl font-semibold font-display">Clean SRTs</h2>
+        </div>
+        <p class="mt-3 text-sm text-slate-300 sm:text-base">
+          Remove ad blocks like YTS and other promo lines without touching timing. Sublogue keeps subtitle order
+          intact while cleaning the text.
+        </p>
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-mono uppercase text-slate-400">Before</p>
+              <span
+                class="rounded-full border border-white/10 px-3 py-1 text-[0.65rem] font-mono uppercase text-slate-400">
+                YTS
+              </span>
+            </div>
+            <pre
+              class="mt-4 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl border border-white/10 bg-night-900/90 p-4 text-[0.7rem] font-mono leading-relaxed text-slate-300 shadow-[0_12px_30px_rgba(0,0,0,0.45)] sm:text-xs sm:whitespace-pre"><code>1
+00:00:01,000 --> 00:00:04,000
+Visit YTS.mx for more movies
+
+2
+00:00:05,000 --> 00:00:07,200
+Grab the latest releases</code></pre>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-mono uppercase text-slate-400">After</p>
+              <span
+                class="rounded-full border border-ember-500/40 bg-ember-500/10 px-3 py-1 text-[0.65rem] font-mono uppercase text-ember-500">
+                Clean
+              </span>
+            </div>
+            <pre
+              class="mt-4 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl border border-white/10 bg-night-900/90 p-4 text-[0.7rem] font-mono leading-relaxed text-emerald-200 shadow-[0_12px_30px_rgba(0,0,0,0.45)] sm:text-xs sm:whitespace-pre"><code>1
+00:00:08,000 --> 00:00:10,200
+You are early.</code></pre>
+            <p class="mt-4 text-sm text-slate-300">
+              Ad-only blocks are removed, while the rest of the subtitle content remains untouched.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="examples" class="mb-12 md:mb-16">
+        <div class="flex items-center gap-3">
+          <i data-lucide="sparkles" class="h-6 w-6 text-ember-500"></i>
+          <h2 class="text-2xl font-semibold font-display">Metadata Examples</h2>
+        </div>
+        <p class="mt-3 text-sm text-slate-300 sm:text-base">
+          Sublogue can insert plots, runtimes, directors, and ratings right into the subtitle header for quick
+          context before the dialogue begins.
+        </p>
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <div class="flex items-center gap-3">
+              <i data-lucide="film" class="h-5 w-5 text-ember-500"></i>
+              <h3 class="text-lg font-semibold font-display">Plot + Runtime</h3>
+            </div>
+            <div class="mt-4 rounded-2xl border border-white/10 bg-night-900/80 p-4 text-sm text-slate-200">
+              <p class="text-xs font-mono uppercase text-slate-400">Injected Header</p>
+              <p class="mt-3 font-semibold">Plot</p>
+              <p class="mt-2 text-slate-300">
+                A retired detective returns for one last case and uncovers a hidden network in the city.
+              </p>
+              <p class="mt-3 text-xs font-mono uppercase text-ember-500">Runtime: 112 min</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <div class="flex items-center gap-3">
+              <i data-lucide="clapperboard" class="h-5 w-5 text-ember-500"></i>
+              <h3 class="text-lg font-semibold font-display">Director + Cast</h3>
+            </div>
+            <div class="mt-4 rounded-2xl border border-white/10 bg-night-900/80 p-4 text-sm text-slate-200">
+              <p class="text-xs font-mono uppercase text-slate-400">Injected Header</p>
+              <p class="mt-3 font-semibold">Director</p>
+              <p class="mt-2 text-slate-300">Ava Solomon</p>
+              <p class="mt-3 font-semibold">Cast</p>
+              <p class="mt-2 text-slate-300">J. Harper, L. Chen, M. Brooks</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-night-800/70 p-6">
+            <div class="flex items-center gap-3">
+              <i data-lucide="star" class="h-5 w-5 text-ember-500"></i>
+              <h3 class="text-lg font-semibold font-display">Ratings</h3>
+            </div>
+            <div class="mt-4 rounded-2xl border border-white/10 bg-night-900/80 p-4 text-sm text-slate-200">
+              <p class="text-xs font-mono uppercase text-slate-400">Injected Header</p>
+              <div class="mt-4 flex flex-wrap items-center gap-3">
+                <span
+                  class="flex items-center gap-2 rounded-full border border-white/10 bg-night-800/60 px-3 py-1 text-xs font-semibold">
+                  IMDb 7.8
+                </span>
+                <span
+                  class="flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                  RT 94%
+                </span>
+              </div>
+              <div class="mt-4 flex items-center gap-2 text-ember-500">
+                <i data-lucide="star" class="h-4 w-4 fill-current"></i>
+                <i data-lucide="star" class="h-4 w-4 fill-current"></i>
+                <i data-lucide="star" class="h-4 w-4 fill-current"></i>
+                <i data-lucide="star" class="h-4 w-4 fill-current"></i>
+                <i data-lucide="star" class="h-4 w-4"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center gap-3 text-xs text-slate-400">
+              <img src="sublogue_v2.png" alt="Sublogue" class="h-5 w-auto sm:h-6" />
+              <span>Sublogue metadata branding</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="integrations" class="mb-12 grid gap-6 lg:grid-cols-[1fr_1.2fr] md:mb-16">
+        <div class="rounded-3xl border border-white/10 bg-night-800/70 p-6 sm:p-8">
+          <div class="flex items-center gap-3">
+            <i data-lucide="plug" class="h-6 w-6 text-ember-500"></i>
+            <h2 class="text-2xl font-semibold font-display">Integrations</h2>
+          </div>
+          <p class="mt-4 text-sm text-slate-300">
+            Start with zero providers enabled. Add OMDb, TMDb, or TVMaze when you have keys ready. Each scan can
+            choose its preferred source.
+          </p>
+          <div class="mt-6 space-y-4 text-sm text-slate-300">
+            <div class="rounded-2xl border border-white/10 bg-night-900/70 p-4">
+              <div class="flex items-center gap-3">
+                <i data-lucide="film" class="h-5 w-5 text-ember-500"></i>
+                OMDb - Fast movie metadata
+              </div>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-night-900/70 p-4">
+              <div class="flex items-center gap-3">
+                <i data-lucide="clapperboard" class="h-5 w-5 text-ember-500"></i>
+                TMDb - Rich cast and ratings
+              </div>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-night-900/70 p-4">
+              <div class="flex items-center gap-3">
+                <i data-lucide="tv" class="h-5 w-5 text-ember-500"></i>
+                TVMaze - Series and episodes
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-white/10 bg-night-800/70 p-6 sm:p-8">
+          <div class="flex items-center gap-3">
+            <i data-lucide="wand-2" class="h-6 w-6 text-ember-500"></i>
+            <h2 class="text-2xl font-semibold font-display">API Notes</h2>
+          </div>
+          <p class="mt-4 text-sm text-slate-300">
+            Sublogue expects your media folders to be readable by the container. Large scans stream results to the
+            UI while the API continues processing in the background.
+          </p>
+          <div class="mt-6 space-y-4 text-sm text-slate-300">
+            <div class="flex items-start gap-3">
+              <i data-lucide="folder" class="mt-1 h-5 w-5 text-ember-500"></i>
+              <div>
+                <p class="font-semibold">Volumes</p>
+                <p>Map /config for settings and /media for subtitle files.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i data-lucide="activity" class="mt-1 h-5 w-5 text-ember-500"></i>
+              <div>
+                <p class="font-semibold">Status</p>
+                <p>Scan progress appears in the UI with streaming rows as files are processed.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i data-lucide="settings" class="mt-1 h-5 w-5 text-ember-500"></i>
+              <div>
+                <p class="font-semibold">Settings</p>
+                <p>Integrations remain disabled until you add keys in the Settings tab.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="community" class="mb-12 md:mb-16">
+        <div class="rounded-3xl border border-ember-500/30 bg-night-800/70 p-6 sm:p-8">
+          <div class="flex items-center gap-3">
+            <i data-lucide="message-circle" class="h-6 w-6 text-ember-500"></i>
+            <h2 class="text-2xl font-semibold font-display">Join the Community</h2>
+          </div>
+          <p class="mt-4 text-sm text-slate-300 sm:text-base">
+            Jump into the ponzischeme89 Discord and visit <span
+              class="font-semibold text-slate-200">#sublogue-support</span>
+            for help, updates, and feature requests.
+          </p>
+          <div
+            class="mt-5 inline-flex items-center gap-3 rounded-full border border-ember-500/40 bg-ember-500/10 px-4 py-2 text-sm font-semibold text-ember-500">
+            <i data-lucide="hash" class="h-4 w-4"></i>
+            #sublogue-support
+          </div>
+        </div>
+      </section>
     </main>
 
+    <footer class="border-t border-white/10">
+      <div
+        class="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-slate-400 sm:px-6 md:flex-row md:items-center md:justify-between">
+        <p>&copy 2026 ponzischeme89. Released under AGLPL-3.0 licence.</p>
+        <div class="flex items-center gap-3">
+          <i data-lucide="github" class="h-4 w-4"></i>
+          <span>github.com/ponzischeme89/Sublogue</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
-<script>
-    (function () {
-        const frames = document.querySelectorAll('#subtitleDemo .demo-frame');
-        let index = 0;
-
-        setInterval(() => {
-            frames[index].classList.remove('active');
-            index = (index + 1) % frames.length;
-            frames[index].classList.add('active');
-        }, 4500);
-    })();
-</script>
-
 
 </html>

@@ -60,9 +60,6 @@
       >
         <!-- Left -->
         <div class="flex items-center gap-3 text-[11px]">
-          <span class="font-medium text-text-primary tracking-tight">
-            Sublogue Version: v1.0.3 Release Candiate
-          </span>
           <span class="hidden sm:inline opacity-30">•</span>
           <span class="text-text-secondary"> Open source (AGPL-3.0) </span>
           <span class="hidden sm:inline opacity-30">•</span>

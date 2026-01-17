@@ -156,25 +156,14 @@
         class={`flex items-center rounded-md bg-white/5 px-3 py-2 text-xs ${collapsed ? "justify-center" : "justify-between"}`}
       >
         {#if !collapsed}
-          <span class="text-text-tertiary">Version</span>
           <Badge className="bg-white/10 text-text-secondary"
-            >v1.0.2 Release Candiate</Badge
+            >v1.0.4 Release Candiate</Badge
           >
         {:else}
           <Badge className="bg-white/10 text-text-secondary">v</Badge>
         {/if}
       </div>
-      <a
-        href="https://github.com/ponzischeme89/Sublogue/releases"
-        target="_blank"
-        rel="noopener noreferrer"
-        class={`inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-xs text-text-tertiary hover:text-white hover:bg-[color:var(--bg-hover)] transition-colors ${collapsed ? "justify-center" : "gap-2"}`}
-      >
-        <Download class="h-4 w-4" />
-        {#if !collapsed}
-          Check updates
-        {/if}
-      </a>
+
       <a
         href="https://github.com/ponzischeme89/Sublogue"
         target="_blank"
@@ -183,7 +172,7 @@
       >
         <Github class="h-4 w-4" />
         {#if !collapsed}
-          GitHub
+          Star on GitHub
         {/if}
       </a>
     </div>

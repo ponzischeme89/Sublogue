@@ -20,6 +20,8 @@
   value={$currentTheme}
   placeholder="Appearance"
   className={className}
+  dropup={true}
+  searchable={false}
   on:change={handleThemeChange}
 >
   <svelte:fragment slot="icon">
