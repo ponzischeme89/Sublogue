@@ -1,0 +1,89 @@
+# -----------------------------
+# GLOBAL JUNK
+# -----------------------------
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# -----------------------------
+# PYTHON
+# -----------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db        # remove DB files (you NEVER want sublogue.db in git)
+*.sqlite3
+
+.venv/
+env/
+venv/
+
+# pytest / coverage
+.coverage
+.pytest_cache/
+
+# -----------------------------
+# NODE / JS / SVELTE
+# -----------------------------
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+dist/
+build/
+.svelte-kit/
+.vite/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# -----------------------------
+# CLAUDE / AI TEMP JUNK (YOURS)
+# -----------------------------
+tmpclaude-*
+*claude-*-cwd
+
+# -----------------------------
+# FRONTEND
+# -----------------------------
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.svelte-kit/
+frontend/.vite/
+frontend/.DS_Store
+
+# -----------------------------
+# BACKEND
+# -----------------------------
+server/__pycache__/
+server/*.pyc
+server/*.pyo
+server/*.pyd
+server/*.db
+server/*.sqlite3
+
+# -----------------------------
+# ENVIRONMENT / SECRETS
+# -----------------------------
+.env
+.env.*
+*.key
+*.pem
+
+# -----------------------------
+# IDE / EDITOR JUNK
+# -----------------------------
+.idea/
+*.code-workspace
+*.swp
+*.swo
+
+# -----------------------------
+# OS JUNK
+# -----------------------------
+$RECYCLE.BIN/
