@@ -17,8 +17,8 @@ Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadat
 
 ## Getting started
 
-### Docker
-
+<details>
+  <summary>Docker Compose</summary>
 Create `data/` and `media/` folders next to the compose file, then run:
 
 ```yaml
@@ -46,7 +46,7 @@ docker compose up -d
 ```
 
 Open `http://localhost:5000`.
-
+</details>
 <details>
   <summary>Unraid</summary>
 
