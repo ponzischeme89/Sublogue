@@ -751,7 +751,7 @@
             tmdb: tmdbEnabled,
             tvmaze: tvmazeEnabled,
           }}
-          loading={scanning || processing}
+          loading={processing}
           on:processSingle={handleProcessSingle}
           on:processBulk={handleProcessBulk}
           on:metadataSourceChange={handleMetadataSourceChange}

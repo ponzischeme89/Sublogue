@@ -29,7 +29,7 @@ Why? If the cast and IMDb/RT rating appear in the first minute, movie night invo
 ## Getting started
 
 <details>
-  <summary>Docker Compose</summary>
+<summary>⚓ Docker Compose</summary>
 Create `data/` and `media/` folders next to the compose file, then run:
 
 ```yaml
@@ -40,9 +40,7 @@ services:
     container_name: sublogue
     restart: unless-stopped
     environment:
-      - TZ=Etc/UTC
-      - PUID=1000
-      - PGID=1000
+      - TZ=Pacific/Auckland
     volumes:
       - ./data:/config
       - ./media:/media
@@ -59,7 +57,7 @@ docker compose up -d
 Open `http://localhost:5000`.
 </details>
 <details>
-  <summary>Unraid</summary>
+  <summary>🧡 Unraid</summary>
 
 Use the included template at `unraid-sublogue.xml`.
 
@@ -70,7 +68,7 @@ Start the container and open `http://<UNRAID-IP>:5000`.
 </details>
 
 <details>
-  <summary>Komodo</summary>
+<summary>🦎 Komodo</summary>
 
 Create a new stack and paste a Komodo template like this:
 

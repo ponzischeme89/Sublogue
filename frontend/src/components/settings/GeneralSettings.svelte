@@ -35,43 +35,7 @@
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-8">
   <div>
-    <div class="rounded-xl border border-red-500/30 bg-red-500/5 p-6 space-y-4 mb-6">
-      <div>
-        <h3 class="text-sm font-semibold text-red-200">Support Sublogue ❤️</h3>
-        <p class="text-[12px] text-red-200/70">
-          Matt is a single developer of Sublogue and Shelfarr — your support and stars on GitHub help me keep going.
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <button type="button" class="flex-1 min-w-[220px] px-4 py-3 rounded-xl text-[12px] font-medium border border-red-500/30 bg-bg-card/70 text-text-secondary hover:text-red-100 hover:bg-red-500/10 hover:border-red-500/60 transition-all">
-          <div class="text-[13px] font-semibold text-text-primary">Buy me coffee</div>
-          <div class="text-[11px] text-text-tertiary">Small tip · $4.99</div>
-        </button>
-        <button type="button" class="flex-1 min-w-[220px] px-4 py-3 rounded-xl text-[12px] font-medium border border-red-500/30 bg-bg-card/70 text-text-secondary hover:text-red-100 hover:bg-red-500/10 hover:border-red-500/60 transition-all">
-          <div class="text-[13px] font-semibold text-text-primary">Buy me lunch</div>
-          <div class="text-[11px] text-text-tertiary">Medium tip · $9.99</div>
-        </button>
-        <button type="button" class="flex-1 min-w-[220px] px-4 py-3 rounded-xl text-[12px] font-medium border border-red-500/30 bg-bg-card/70 text-text-secondary hover:text-red-100 hover:bg-red-500/10 hover:border-red-500/60 transition-all">
-          <div class="text-[13px] font-semibold text-text-primary">Buy me dinner</div>
-          <div class="text-[11px] text-text-tertiary">Large tip · $19.99</div>
-        </button>
-      </div>
-      <div class="flex items-center justify-between">
-        <p class="text-[11px] text-text-tertiary">
-          Every bit keeps Sublogue shipping.
-        </p>
-        <a
-          href="https://www.buymeacoffee.com/sublogue"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="px-4 py-2 rounded-lg border border-red-500/30 text-[12px] text-text-secondary hover:text-white hover:bg-bg-hover transition-all"
-        >
-          Donate
-        </a>
-      </div>
-    </div>
-
-    <h2 class="text-lg font-semibold text-text-primary">General Settings</h2>
+      <h2 class="text-lg font-semibold text-text-primary">General Settings</h2>
     <p class="text-[13px] text-text-secondary mb-6">
       Control how scans run and where summaries are placed.
     </p>

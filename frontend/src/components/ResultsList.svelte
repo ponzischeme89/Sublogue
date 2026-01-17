@@ -1106,7 +1106,7 @@
     <!-- Table -->
     <div class="rounded-lg border border-border bg-card overflow-hidden">
       <div class="max-h-[650px] overflow-y-auto overflow-x-auto">
-        <Table className="w-full">
+        <Table className="w-full table-fixed">
           <TableHeader className="sticky top-0 bg-muted/60 backdrop-blur border-b border-border">
             <TableRow className="uppercase tracking-wider">
               <TableHead className="w-12">
@@ -1119,13 +1119,13 @@
               </TableHead>
               <TableHead className="w-10"></TableHead>
               <TableHead className="w-28">Status</TableHead>
-              <TableHead>Filename</TableHead>
-              <TableHead>Matched Result</TableHead>
+              <TableHead className="w-[38%]">Filename</TableHead>
+              <TableHead className="w-[28%]">Matched Result</TableHead>
               <TableHead className="w-64 text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {#if loading}
+            {#if loading && files.length === 0}
               {#each Array(6) as _}
                 <TableRow>
                   <TableCell className="w-12">
@@ -1190,7 +1190,7 @@
                   <TableCell className="w-28">
                     <StatusBadge status={file.status} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-0">
                     <span
                       class="text-[13px] font-mono truncate block"
                       title={file.name}
@@ -1198,7 +1198,7 @@
                       {file.name}
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-0">
                     <div class="flex items-center gap-2">
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
@@ -1219,7 +1219,7 @@
                           <span class="text-[11px] text-blue-400"
                             >→ Matched:</span
                           >
-                          <span class="text-[11px] text-blue-300"
+                          <span class="text-[11px] text-blue-300 truncate block"
                             >{suggestedMatches[file.path]?.title || "Unknown"} ({suggestedMatches[
                               file.path
                             ]?.year || "N/A"})</span
