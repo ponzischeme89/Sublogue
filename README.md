@@ -41,6 +41,8 @@ docker run -d \
   ghcr.io/ponzischeme89/sublogue:latest
 ```
 
+**Installation Methods (Expand sections to see details)**
+
 <details>
 <summary>⚓ Docker Compose</summary>
 Create `data/` and `media/` folders next to the compose file, then run:
