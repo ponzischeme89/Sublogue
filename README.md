@@ -12,11 +12,19 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 
 ## Features
 - Insert plot summaries into existing .srt files without shifting timings
-- Fetch metadata (plot, runtime, director, cast, IMDb/RT ratings) using OMDb, TMDb, TVMaze and Wikipedia — add these integrations under Settings before scanning
+- Fetch metadata (plot, runtime, director, cast, IMDb/RT ratings) using OMDb, TMDb, TVMaze and Wikipedia - add these integrations under Settings before scanning
 - Preserve original dialogue and timing with safe insertion logic
 - Folder Rules to have seperate logic for different folders (for example TV shows could have runtime but not actors, etc)
 - Clean, fast web UI for scanning and batch processing built with Svelte + Python/Flask
 - Three themes included: OLED, Ocean, and Dracula White
+
+## Integrations
+| Provider | Signup / API key | Rate limits (see provider for current limits) | Notes |
+| --- | --- | --- | --- |
+| OMDb | https://www.omdbapi.com/apikey.aspx | Free tier has a daily cap 1000 | Requires API key |
+| TMDb | https://www.themoviedb.org/settings/api | Per-second rate limit | Requires API key |
+| TVmaze | https://www.tvmaze.com/api | Polite usage limits | No API key required |
+| Wikipedia | https://www.mediawiki.org/wiki/API:Main_page | No hard limits, be polite | No API key required; strict title matching |
 
 ## Screenshots
 <div align="center">
