@@ -3,16 +3,13 @@
   import { Separator } from "../lib/components/ui/separator";
   import { Badge } from "../lib/components/ui/badge";
   import {
-    Calendar,
-    Download,
     ChevronLeft,
     ChevronRight,
     Github,
-    Heart,
-    Package,
     Scan,
     Settings,
     History,
+    Library,
   } from "lucide-svelte";
   import ThemeSelector from "./ThemeSelector.svelte";
   import sublogueLogo from "../assets/sublogue_v2.png";
@@ -115,16 +112,16 @@
         className={`w-full rounded-md py-1.5 text-[13px] font-semibold leading-none ${
           collapsed ? "justify-center px-0" : "justify-start px-2 gap-2"
         } ${
-          currentView === "scheduled"
+          currentView === "library"
             ? "bg-[color:var(--bg-hover)] text-white font-bold"
             : "text-text-secondary hover:text-white hover:bg-[color:var(--bg-hover)]"
         }`}
-        on:click={() => onNavigate("scheduled")}
-        aria-current={currentView === "scheduled" ? "page" : undefined}
+        on:click={() => onNavigate("library")}
+        aria-current={currentView === "library" ? "page" : undefined}
       >
-        <Calendar class="h-4 w-4" />
+        <Library class="h-4 w-4" />
         {#if !collapsed}
-          Scheduled Scans
+          Library
         {/if}
       </Button>
 
@@ -157,7 +154,7 @@
       >
         {#if !collapsed}
           <Badge className="bg-white/10 text-text-secondary"
-            >v1.0.6 Release Candiate</Badge
+            >v1.0.7 Release Candiate</Badge
           >
         {:else}
           <Badge className="bg-white/10 text-text-secondary">v</Badge>

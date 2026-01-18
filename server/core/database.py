@@ -4,7 +4,7 @@ Handles persistent storage for settings, runs, and history
 """
 from datetime import datetime
 from pathlib import Path
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Float, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Float, Text, ForeignKey, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, scoped_session
 import json
@@ -83,6 +83,28 @@ class ScanHistory(Base):
 
     def __repr__(self):
         return f"<ScanHistory(id={self.id}, directory='{self.directory}', files_found={self.files_found})>"
+
+
+class ScanFile(Base):
+    """Scan files table - stores file details per scan"""
+    __tablename__ = 'scan_files'
+
+    id = Column(Integer, primary_key=True)
+    scan_id = Column(Integer, ForeignKey('scan_history.id'), nullable=False, index=True)
+    file_path = Column(String(500), nullable=False, index=True)
+    file_name = Column(String(255), nullable=False)
+    title = Column(String(255))
+    year = Column(String(10))
+    has_plot = Column(Boolean, default=False)
+    plot_marker_count = Column(Integer, default=0)
+    status = Column(String(100))
+    summary = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    scan = relationship("ScanHistory")
+
+    def __repr__(self):
+        return f"<ScanFile(id={self.id}, file_name='{self.file_name}', has_plot={self.has_plot})>"
 
 
 class ScheduledScan(Base):
@@ -172,11 +194,31 @@ class DatabaseManager:
 
         # Create tables if they don't exist
         Base.metadata.create_all(self.engine)
+        self._ensure_scan_files_schema()
         logger.info(f"Database initialized at {self.db_path}")
 
     def get_session(self):
         """Get a new database session"""
         return self.Session()
+
+    def _ensure_scan_files_schema(self):
+        """Ensure scan_files table has newer columns in existing databases."""
+        session = self.get_session()
+        try:
+            columns = session.execute(text("PRAGMA table_info(scan_files)")).fetchall()
+            if not columns:
+                return
+            existing = {row[1] for row in columns}  # column name is index 1
+            if "title" not in existing:
+                session.execute(text("ALTER TABLE scan_files ADD COLUMN title VARCHAR(255)"))
+            if "year" not in existing:
+                session.execute(text("ALTER TABLE scan_files ADD COLUMN year VARCHAR(10)"))
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error migrating scan_files schema: {e}")
+        finally:
+            session.close()
 
     def close_session(self):
         """Close the session"""
@@ -387,6 +429,7 @@ class DatabaseManager:
             session.add(scan)
             session.commit()
             logger.info(f"Scan history saved for {directory}")
+            return scan.id
         except Exception as e:
             session.rollback()
             logger.error(f"Error saving scan history: {e}")
@@ -413,6 +456,91 @@ class DatabaseManager:
                     'scan_duration_ms': scan.scan_duration_ms
                 })
             return result
+        finally:
+            session.close()
+
+    def add_scan_files(self, scan_id, files):
+        """Persist file details for a scan"""
+        session = self.get_session()
+        try:
+            for file_info in files:
+                session.add(ScanFile(
+                    scan_id=scan_id,
+                    file_path=file_info.get("path"),
+                    file_name=file_info.get("name"),
+                    title=file_info.get("title"),
+                    year=file_info.get("year"),
+                    has_plot=bool(file_info.get("has_plot")),
+                    plot_marker_count=int(file_info.get("plot_marker_count") or 0),
+                    status=file_info.get("status"),
+                    summary=file_info.get("summary", "")
+                ))
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error saving scan files: {e}")
+            raise
+        finally:
+            session.close()
+
+    def get_scan_files(self, scan_id):
+        """Get all files for a scan"""
+        session = self.get_session()
+        try:
+            files = session.query(ScanFile).filter_by(scan_id=scan_id).all()
+            return [
+                {
+                    "path": f.file_path,
+                    "name": f.file_name,
+                    "title": f.title,
+                    "year": f.year,
+                    "has_plot": f.has_plot,
+                    "plot_marker_count": f.plot_marker_count,
+                    "status": f.status,
+                    "summary": f.summary
+                }
+                for f in files
+            ]
+        finally:
+            session.close()
+
+    def get_latest_scan_files(self):
+        """Get latest scan entry per file path"""
+        session = self.get_session()
+        try:
+            files = session.query(ScanFile).order_by(ScanFile.created_at.desc()).all()
+            latest = {}
+            for file_entry in files:
+                if file_entry.file_path in latest:
+                    continue
+                latest[file_entry.file_path] = {
+                    "path": file_entry.file_path,
+                    "name": file_entry.file_name,
+                    "title": file_entry.title,
+                    "year": file_entry.year,
+                    "has_plot": file_entry.has_plot,
+                    "plot_marker_count": file_entry.plot_marker_count,
+                    "status": file_entry.status,
+                    "summary": file_entry.summary
+                }
+            return list(latest.values())
+        finally:
+            session.close()
+
+    def get_latest_file_results(self):
+        """Get latest processing result per file"""
+        session = self.get_session()
+        try:
+            results = session.query(FileResult).order_by(FileResult.processed_at.desc()).all()
+            latest = {}
+            for result in results:
+                if result.file_path not in latest:
+                    latest[result.file_path] = {
+                        "status": result.status,
+                        "error_message": result.error_message,
+                        "processed_at": result.processed_at.isoformat() if result.processed_at else None
+                    }
+            return latest
         finally:
             session.close()
 

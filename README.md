@@ -102,10 +102,28 @@ networks:
 ```
 </details>
 
-## Roadmap
-- [x] Add support for TVMaze  
-- [ ] Add support for more themes  
-- [ ] Bring in posters into results list so it's easier to identify movies / TV shows
+## Limitations
+- API rate limits: OMDb is tight, TMDb is better, TVMaze is polite-but-limited. Heavy scans may hit caps.
+- Metadata gaps: If providers don’t have it, Sublogue won’t either. Ratings/plots can be missing or stale.
+- Localisation: Only TMDb supports proper language/region data. OMDb/TVMaze are mostly English-only.
+- Long plots: Big summaries go in as-is. Your TV may split them across multiple screens.
+- Formats: Only .srt is supported. No WebVTT, ASS/SSA, or embedded subs yet.
+- Duplicate inserts: Reprocessing the same file will stack multiple plot blocks.
+- Offline use: Requires internet for metadata lookups — no offline mode.
+- File access: Read-only or locked files cannot be processed.
+
+  ## Roadmap
+  - [x]   TVMaze integration
+  - [ ]  More UI themes (OLED variants, Ocean+, and high-contrast)
+  - [ ]  Poster + backdrop previews in results
+  - [ ]  Smart duplicate-detection (don’t re-insert plot blocks)
+  - [ ]  Automatic rate-limit backoff + retry logic
+  - [ ]  Optional “short plot mode” for long summaries
+  - [ ]  Expanded localisation using TMDb (title, plot, cast where available)
+  - [ ]  Multi-format subtitle support (WebVTT, ASS/SSA)
+  - [ ]  Offline caching of recent metadata lookups
+  - [ ]  Per-scan analytics: success/fail counts, rate-limit warnings
+  - [ ]  CLI mode for batch operations
 
 ## Support
 - Help spread the word about Sublogue by telling your friends about this repo

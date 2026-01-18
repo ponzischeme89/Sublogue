@@ -332,6 +332,16 @@ export async function getStatistics() {
   return apiFetch('/statistics')
 }
 
+// ============ LIBRARY API ============
+
+/**
+ * GET /api/library - Get library health report
+ * Returns: { success, scans: [...] }
+ */
+export async function getLibraryReport(limit = 25) {
+  return apiFetch(`/library?limit=${limit}`)
+}
+
 // ============ SCHEDULED SCANS API ============
 
 /**

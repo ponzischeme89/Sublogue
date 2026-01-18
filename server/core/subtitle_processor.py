@@ -1463,6 +1463,14 @@ class SubtitleProcessor:
                     )
 
                 # ─────────────────────────────────────────────────────────────
+                if insertion_position != "end" and not intro_blocks:
+                    return {
+                        "success": False,
+                        "error": "Insufficient gap before first subtitle",
+                        "status": "Insufficient Gap",
+                        "summary": ""
+                    }
+
                 # PHASE 5: Combine intro + original subtitles
                 #
                 # NOTE: We're ONLY renumbering indices (1, 2, 3...), NOT timestamps!

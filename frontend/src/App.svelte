@@ -7,7 +7,7 @@
   import SettingsPanel from './components/SettingsPanel.svelte'
   import ScanPanel from './components/ScanPanel.svelte'
   import HistoryPanel from './components/HistoryPanel.svelte'
-  import ScheduledScansPanel from './components/ScheduledScansPanel.svelte'
+  import LibraryPanel from './components/LibraryPanel.svelte'
   import { Menu } from 'lucide-svelte'
   import ToastHost from './components/ToastHost.svelte'
   import { healthCheck } from './lib/api.js'
@@ -164,8 +164,8 @@
               onOpenHistory={() => navigateTo('history')}
             />
           {/key}
-        {:else if currentView === 'scheduled'}
-          <ScheduledScansPanel />
+        {:else if currentView === 'library'}
+          <LibraryPanel />
         {/if}
       </div>
     </main>

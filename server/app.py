@@ -4,6 +4,8 @@ import logging
 import os
 import threading
 import time
+import re
+from difflib import SequenceMatcher
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,7 +16,8 @@ from core.config_manager import ConfigManager
 from core.omdb_client import OMDbClient
 from core.tmdb_client import TMDbClient
 from core.tvmaze_client import TVMazeClient
-from core.subtitle_processor import SubtitleProcessor, SubtitleFormatOptions
+from core.subtitle_processor import SubtitleProcessor, SubtitleFormatOptions, SUBLOGUE_TOKEN_PATTERN, SUBLOGUE_SENTINEL
+from core.keyword_stripper import get_stripper
 from core.file_scanner import FileScanner
 from core.database import DatabaseManager
 
@@ -75,12 +78,13 @@ def perform_scheduled_scan(directory):
     scan_duration_ms = int((time.time() - start_time) * 1000)
     files_with_plot = sum(1 for f in files if f.get("has_plot", False))
 
-    db.add_scan_history(
+    scan_id = db.add_scan_history(
         directory=directory,
         files_found=len(files),
         files_with_plot=files_with_plot,
         scan_duration_ms=scan_duration_ms
     )
+    db.add_scan_files(scan_id, files)
 
     return {
         "files_found": len(files),
@@ -245,6 +249,115 @@ def _merge_format_options(base_options: SubtitleFormatOptions, rule: dict | None
         show_genre=_override_bool("subtitle_show_genre", base_options.show_genre),
     )
 
+
+def _parse_library_identity(file_info: dict) -> dict:
+    """Parse title, year, season, and episode from filename metadata."""
+    file_name = file_info.get("name", "")
+    title = file_info.get("title")
+    year = file_info.get("year")
+
+    if not title:
+        stripped = get_stripper().clean_filename(file_name, preserve_year=True)
+        title = stripped.get("cleaned_title") or Path(file_name).stem
+        year = year or stripped.get("year")
+        season = stripped.get("season")
+        episode = stripped.get("episode")
+    else:
+        season, episode = get_stripper().extract_season_episode(file_name)
+
+    clean_title = title or Path(file_name).stem
+    clean_title = clean_title.replace(SUBLOGUE_SENTINEL, "")
+    clean_title = re.sub(r"<[^>]+>", "", clean_title)
+    clean_title = SUBLOGUE_TOKEN_PATTERN.sub("", clean_title)
+    clean_title = re.sub(r"\b(en|eng|english|ita|it|italian|fr|es|de|multi)\b", "", clean_title, flags=re.I)
+    clean_title = re.sub(r'\s*-\s*copy\b', '', clean_title, flags=re.I)
+    clean_title = re.sub(r'\s*copy\b', '', clean_title, flags=re.I)
+    clean_title = re.sub(r"\((\d{4})\)\s*\(\1\)", r"(\1)", clean_title)
+    if year:
+        clean_title = re.sub(rf"\s*\({re.escape(str(year))}\)$", "", clean_title)
+    clean_title = " ".join(clean_title.split()).strip()
+
+    return {
+        "title": clean_title,
+        "year": year,
+        "season": season,
+        "episode": episode,
+    }
+
+
+def _group_key(title: str, year: str | None) -> str:
+    base = title.strip().lower()
+    return f"{base} ({year})" if year else base
+
+
+def _build_library_items(files: list[dict], latest_results: dict, limit: int) -> list[dict]:
+    """Aggregate scan files into library items."""
+    grouped = {}
+    for file_info in files:
+        parsed = _parse_library_identity(file_info)
+        key = _group_key(parsed["title"], parsed["year"])
+        item = grouped.get(key)
+        if not item:
+            # Try fuzzy match to existing groups
+            for existing_key, existing in grouped.items():
+                ratio = SequenceMatcher(None, existing["title"].lower(), parsed["title"].lower()).ratio()
+                if ratio >= 0.88:
+                    key = existing_key
+                    item = existing
+                    break
+        if not item:
+            item = grouped.setdefault(key, {
+                "title": parsed["title"],
+                "year": parsed["year"],
+            "files": [],
+            "health": {
+                "missing_plot": 0,
+                "duplicate_plot": 0,
+                "insufficient_gap": 0
+            }
+        })
+
+        issues = []
+        if not file_info.get("has_plot"):
+            issues.append({"type": "missing_plot", "reason": "No plot detected"})
+            item["health"]["missing_plot"] += 1
+        if (file_info.get("plot_marker_count") or 0) > 1:
+            issues.append({"type": "duplicate_plot", "reason": "Multiple plot markers detected"})
+            item["health"]["duplicate_plot"] += 1
+
+        latest_result = latest_results.get(file_info.get("path"))
+        if latest_result and latest_result.get("status") == "Insufficient Gap":
+            issues.append({
+                "type": "insufficient_gap",
+                "reason": latest_result.get("error_message") or "Insufficient gap before first subtitle"
+            })
+            item["health"]["insufficient_gap"] += 1
+
+        display_name = parsed["title"]
+        if parsed["season"] is not None and parsed["episode"] is not None:
+            display_name = f"{parsed['title']} - S{parsed['season']:02d}E{parsed['episode']:02d}"
+        elif parsed["year"]:
+            display_name = f"{parsed['title']} ({parsed['year']})"
+
+        item["files"].append({
+            **file_info,
+            "display_name": display_name,
+            "duplicate_plot": (file_info.get("plot_marker_count") or 0) > 1,
+            "latest_status": latest_result.get("status") if latest_result else None,
+            "latest_error": latest_result.get("error_message") if latest_result else None,
+            "issues": issues
+        })
+
+    items = list(grouped.values())
+    items.sort(
+        key=lambda entry: (
+            entry["health"]["missing_plot"]
+            + entry["health"]["duplicate_plot"]
+            + entry["health"]["insufficient_gap"]
+        ),
+        reverse=True
+    )
+    return items[:limit]
 
 def get_format_options_from_settings() -> SubtitleFormatOptions:
     """Load subtitle formatting options from database settings."""
@@ -418,12 +531,13 @@ def start_scan():
         files_with_plot = sum(1 for f in files if f.get("has_plot", False))
 
         # Save scan history to database
-        db.add_scan_history(
+        scan_id = db.add_scan_history(
             directory=directory,
             files_found=len(files),
             files_with_plot=files_with_plot,
             scan_duration_ms=scan_duration_ms
         )
+        db.add_scan_files(scan_id, files)
 
         # Load existing suggested matches for this directory
         suggested_matches = db.get_suggested_matches_for_directory(directory)
@@ -529,12 +643,13 @@ def stream_scan():
                 files_with_plot = sum(1 for f in all_files if f.get("has_plot", False))
 
                 # Save scan history to database
-                db.add_scan_history(
+                scan_id = db.add_scan_history(
                     directory=directory,
                     files_found=len(all_files),
                     files_with_plot=files_with_plot,
                     scan_duration_ms=scan_duration_ms
                 )
+                db.add_scan_files(scan_id, all_files)
 
                 # Load existing suggested matches
                 logger.info("Loading suggested matches from database...")
@@ -1514,6 +1629,26 @@ def get_scan_history():
         })
     except Exception as e:
         logger.error(f"Error fetching scan history: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/library', methods=['GET'])
+def get_library_report():
+    """Get library health report with scan files and issue summaries"""
+    try:
+        limit = request.args.get('limit', 200, type=int)
+        latest_files = db.get_latest_scan_files()
+        latest_results = db.get_latest_file_results()
+
+        return jsonify({
+            "success": True,
+            "items": _build_library_items(latest_files, latest_results, limit)
+        })
+    except Exception as e:
+        logger.error(f"Error fetching library report: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
