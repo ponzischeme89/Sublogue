@@ -112,18 +112,18 @@ networks:
 - Offline use: Requires internet for metadata lookups — no offline mode.
 - File access: Read-only or locked files cannot be processed.
 
-  ## Roadmap
-  - [x]   TVMaze integration
-  - [ ]  More UI themes (OLED variants, Ocean+, and high-contrast)
-  - [ ]  Poster + backdrop previews in results
-  - [ ]  Smart duplicate-detection (don’t re-insert plot blocks)
-  - [ ]  Automatic rate-limit backoff + retry logic
-  - [ ]  Optional “short plot mode” for long summaries
-  - [ ]  Expanded localisation using TMDb (title, plot, cast where available)
-  - [ ]  Multi-format subtitle support (WebVTT, ASS/SSA)
-  - [ ]  Offline caching of recent metadata lookups
-  - [ ]  Per-scan analytics: success/fail counts, rate-limit warnings
-  - [ ]  CLI mode for batch operations
+## Roadmap
+- [x]   TVMaze integration
+- [ ]  More UI themes (OLED variants, Ocean+, and high-contrast)
+- [ ]  Poster + backdrop previews in results
+- [ ]  Smart duplicate-detection (don’t re-insert plot blocks)
+- [ ]  Automatic rate-limit backoff + retry logic
+- [ ]  Optional “short plot mode” for long summaries
+- [ ]  Expanded localisation using TMDb (title, plot, cast where available)
+- [ ]  Multi-format subtitle support (WebVTT, ASS/SSA)
+- [ ]  Offline caching of recent metadata lookups
+- [ ]  Per-scan analytics: success/fail counts, rate-limit warnings
+- [ ]  CLI mode for batch operations
 
 ## Support
 - Help spread the word about Sublogue by telling your friends about this repo
