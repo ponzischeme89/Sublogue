@@ -18,14 +18,6 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 - Clean, fast web UI for scanning and batch processing built with Svelte + Python/Flask
 - Three themes included: OLED, Ocean, and Dracula White
 
-## Integrations
-| Provider | Signup / API key | Rate limits (see provider for current limits) | Notes |
-| --- | --- | --- | --- |
-| OMDb | https://www.omdbapi.com/apikey.aspx | Free tier has a daily cap 1000 | Requires API key |
-| TMDb | https://www.themoviedb.org/settings/api | Per-second rate limit | Requires API key |
-| TVmaze | https://www.tvmaze.com/api | Polite usage limits | No API key required |
-| Wikipedia | https://www.mediawiki.org/wiki/API:Main_page | No hard limits, be polite | No API key required; strict title matching |
-
 ## Screenshots
 <div align="center">
 
@@ -109,6 +101,14 @@ networks:
     external: true
 ```
 </details>
+
+## Integrations
+| Provider | Signup / API key | Rate limits (see provider for current limits) | Notes |
+| --- | --- | --- | --- |
+| OMDb | https://www.omdbapi.com/apikey.aspx | Free tier has a daily cap 1000 | Requires API key |
+| TMDb | https://www.themoviedb.org/settings/api | Per-second rate limit | Requires API key |
+| TVmaze | https://www.tvmaze.com/api | Polite usage limits | No API key required |
+| Wikipedia | https://www.mediawiki.org/wiki/API:Main_page | No hard limits, be polite | No API key required; strict title matching |
 
 ## Limitations
 - API rate limits: OMDb is tight, TMDb is better, TVMaze is polite-but-limited. Heavy scans may hit caps.
