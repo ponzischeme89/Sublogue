@@ -109,4 +109,4 @@ networks:
 ## Support
 - Help spread the word about Sublogue by telling your friends about this repo
 - Give the repo a star (This really helps)
-- Check out my other project, which is an open source renamer tool.
+- Check out my other project, which is an open source renamer tool (with a very poor naming choice, but i'll likely change this in future) 
