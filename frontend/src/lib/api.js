@@ -336,10 +336,14 @@ export async function getStatistics() {
 
 /**
  * GET /api/library - Get library health report
- * Returns: { success, scans: [...] }
+ * Returns: { success, items: [...], total_items, page, page_size, has_more }
  */
-export async function getLibraryReport(limit = 200, offset = 0) {
-  return apiFetch(`/library?limit=${limit}&offset=${offset}`)
+export async function getLibraryReport(page = 1, pageSize = 200) {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize)
+  })
+  return apiFetch(`/library?${params.toString()}`)
 }
 
 // ============ SCHEDULED SCANS API ============

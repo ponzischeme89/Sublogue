@@ -8,22 +8,22 @@
     clearAllSuggestedMatches,
     getFolderRules,
     getScanHistory,
-  } from "../lib/api.js";
+  } from "../../lib/api.js";
   import ResultsList from "./ResultsList.svelte";
-  import TypewriterQuote from "./TypewriterQuote.svelte";
-  import { scanResults } from "../lib/scanStore.js";
-  import { Button } from "../lib/components/ui/button";
-  import { addToast } from "../lib/toastStore.js";
+  import TypewriterQuote from "../TypewriterQuote.svelte";
+  import { scanResults } from "../../lib/scanStore.js";
+  import { Button } from "../../lib/components/ui/button";
+  import { addToast } from "../../lib/toastStore.js";
   import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-  } from "../lib/components/ui/card";
-  import { Input } from "../lib/components/ui/input";
-  import { Skeleton } from "../lib/components/ui/skeleton";
-  import { Combobox } from "../lib/components/ui/combobox";
+  } from "../../lib/components/ui/card";
+  import { Input } from "../../lib/components/ui/input";
+  import { Skeleton } from "../../lib/components/ui/skeleton";
+  import { Combobox } from "../../lib/components/ui/combobox";
   import { FileText, Folder, Info, Plug, Scan } from "lucide-svelte";
 
   // ------------------------------------------------------------

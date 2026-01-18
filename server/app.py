@@ -287,7 +287,7 @@ def _group_key(title: str, year: str | None) -> str:
     return f"{base} ({year})" if year else base
 
 
-def _build_library_items(files: list[dict], latest_results: dict, limit: int) -> list[dict]:
+def _build_library_items(files: list[dict], latest_results: dict, limit: int | None) -> list[dict]:
     """Aggregate scan files into library items."""
     grouped = {}
     for file_info in files:
@@ -354,6 +354,8 @@ def _build_library_items(files: list[dict], latest_results: dict, limit: int) ->
         ),
         reverse=True
     )
+    if limit is None:
+        return items
     return items[:limit]
 
 def get_format_options_from_settings() -> SubtitleFormatOptions:
@@ -1644,14 +1646,30 @@ def get_scan_history():
 def get_library_report():
     """Get library health report with scan files and issue summaries"""
     try:
-        limit = request.args.get('limit', 200, type=int)
-        offset = request.args.get('offset', 0, type=int)
-        latest_files = db.get_latest_scan_files(limit=limit, offset=offset)
+        page_size = request.args.get('page_size', type=int)
+        page = request.args.get('page', type=int)
+        if page_size is None:
+            page_size = request.args.get('limit', 200, type=int)
+        if page is None:
+            offset = request.args.get('offset', 0, type=int)
+            page = (offset // page_size) + 1 if page_size else 1
+
+        latest_files = db.get_latest_scan_files(limit=None, offset=0)
         latest_results = db.get_latest_file_results()
+        items = _build_library_items(latest_files, latest_results, None)
+
+        total_items = len(items)
+        start = max(0, (page - 1) * page_size)
+        end = start + page_size
+        page_items = items[start:end]
 
         return jsonify({
             "success": True,
-            "items": _build_library_items(latest_files, latest_results, limit)
+            "items": page_items,
+            "total_items": total_items,
+            "page": page,
+            "page_size": page_size,
+            "has_more": end < total_items
         })
     except Exception as e:
         logger.error(f"Error fetching library report: {e}")

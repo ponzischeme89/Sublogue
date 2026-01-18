@@ -5,9 +5,9 @@
   import * as Sidebar from "./lib/components/ui/sidebar";
   import { Button } from "./lib/components/ui/button";
   import SettingsPanel from "./components/SettingsPanel.svelte";
-  import ScanPanel from "./components/ScanPanel.svelte";
+  import ScanPanel from "./components/scan/ScanPanel.svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
-  import LibraryPanel from "./components/LibraryPanel.svelte";
+  import LibraryPanel from "./components/library/LibraryPanel.svelte";
   import { Menu } from "lucide-svelte";
   import ToastHost from "./components/ToastHost.svelte";
   import { healthCheck } from "./lib/api.js";

@@ -1,8 +1,8 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import StatusBadge from "./StatusBadge.svelte";
-  import { Button } from "../lib/components/ui/button";
-  import { Skeleton } from "../lib/components/ui/skeleton";
+  import StatusBadge from "../StatusBadge.svelte";
+  import { Button } from "../../lib/components/ui/button";
+  import { Skeleton } from "../../lib/components/ui/skeleton";
   import {
     Table,
     TableBody,
@@ -10,12 +10,12 @@
     TableHead,
     TableHeader,
     TableRow,
-  } from "../lib/components/ui/table";
+  } from "../../lib/components/ui/table";
   import {
     searchTitle,
     saveSuggestedMatches,
     processBatch,
-  } from "../lib/api.js";
+  } from "../../lib/api.js";
 
   const dispatch = createEventDispatcher();
 

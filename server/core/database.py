@@ -4,7 +4,7 @@ Handles persistent storage for settings, runs, and history
 """
 from datetime import datetime
 from pathlib import Path
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Float, Text, ForeignKey, text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Float, Text, ForeignKey, text, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, scoped_session
 import json
@@ -506,17 +506,28 @@ class DatabaseManager:
             session.close()
 
     def get_latest_scan_files(self, limit=500, offset=0):
-        """Get latest scan entry per file path, paged by scan_files.created_at"""
+        """Get latest scan entry per file path, optionally paged by created_at."""
         session = self.get_session()
         try:
-            files = session.query(ScanFile).order_by(
-                ScanFile.created_at.desc()
-            ).offset(offset).limit(limit).all()
-            latest = {}
-            for file_entry in files:
-                if file_entry.file_path in latest:
-                    continue
-                latest[file_entry.file_path] = {
+            latest_subquery = session.query(
+                ScanFile.file_path,
+                func.max(ScanFile.created_at).label("max_created_at")
+            ).group_by(ScanFile.file_path).subquery()
+
+            query = session.query(ScanFile).join(
+                latest_subquery,
+                (ScanFile.file_path == latest_subquery.c.file_path)
+                & (ScanFile.created_at == latest_subquery.c.max_created_at)
+            ).order_by(ScanFile.created_at.desc())
+
+            if offset:
+                query = query.offset(offset)
+            if limit is not None:
+                query = query.limit(limit)
+
+            files = query.all()
+            return [
+                {
                     "path": file_entry.file_path,
                     "name": file_entry.file_name,
                     "title": file_entry.title,
@@ -526,7 +537,25 @@ class DatabaseManager:
                     "status": file_entry.status,
                     "summary": file_entry.summary
                 }
-            return list(latest.values())
+                for file_entry in files
+            ]
+        finally:
+            session.close()
+
+    def get_latest_scan_files_count(self):
+        """Count distinct latest scan entries per file path."""
+        session = self.get_session()
+        try:
+            latest_subquery = session.query(
+                ScanFile.file_path,
+                func.max(ScanFile.created_at).label("max_created_at")
+            ).group_by(ScanFile.file_path).subquery()
+
+            return session.query(ScanFile).join(
+                latest_subquery,
+                (ScanFile.file_path == latest_subquery.c.file_path)
+                & (ScanFile.created_at == latest_subquery.c.max_created_at)
+            ).count()
         finally:
             session.close()
 

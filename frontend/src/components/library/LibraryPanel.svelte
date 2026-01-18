@@ -1,30 +1,31 @@
 <script>
   import { onMount } from "svelte";
-  import { getLibraryReport } from "../lib/api.js";
-  import { Button } from "../lib/components/ui/button";
+  import { getLibraryReport } from "../../lib/api.js";
+  import { Button } from "../../lib/components/ui/button";
+  import { Skeleton } from "../../lib/components/ui/skeleton";
   import { ChevronDown, ChevronUp, RefreshCcw, FileText } from "lucide-svelte";
 
   let items = [];
   let loading = false;
   let error = null;
   let expanded = {};
-  let page = 0;
+  let page = 1;
   const pageSize = 200;
+  let totalItems = 0;
+  let totalPages = 1;
+  let hasMore = false;
 
-  async function loadLibrary(reset = true) {
+  async function loadLibrary(nextPage = 1) {
     loading = true;
     error = null;
     try {
-      if (reset) {
-        page = 0;
-        items = [];
-      }
-      const response = await getLibraryReport(pageSize, page * pageSize);
-      const nextItems = response.items || [];
-      items = reset ? nextItems : [...items, ...nextItems];
-      if (nextItems.length > 0) {
-        page += 1;
-      }
+      page = nextPage;
+      expanded = {};
+      const response = await getLibraryReport(page, pageSize);
+      items = response.items || [];
+      totalItems = response.total_items ?? items.length;
+      totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+      hasMore = response.has_more ?? page < totalPages;
     } catch (err) {
       error = `Failed to load library report: ${err.message}`;
     } finally {
@@ -36,7 +37,7 @@
     expanded = { ...expanded, [key]: !expanded[key] };
   }
 
-  onMount(() => loadLibrary(true));
+  onMount(() => loadLibrary(1));
 </script>
 
 <div class="space-y-6">
@@ -51,7 +52,7 @@
       variant="outline"
       size="sm"
       className="border-white/15 text-text-secondary hover:bg-white/10"
-      on:click={() => loadLibrary(true)}
+      on:click={() => loadLibrary(1)}
       disabled={loading}
     >
       <RefreshCcw class="h-4 w-4" />
@@ -66,7 +67,24 @@
   {/if}
 
   {#if loading}
-    <div class="text-[13px] text-text-secondary">Loading library report...</div>
+    <div class="space-y-4">
+      {#each Array(4) as _, index}
+        <div class="rounded-2xl border border-border bg-card/60 overflow-hidden">
+          <div class="px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div class="space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div class="flex items-center gap-3">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-6 rounded-full" />
+            </div>
+          </div>
+        </div>
+      {/each}
+    </div>
   {:else if items.length === 0}
     <div class="border border-border rounded-2xl p-12 text-center">
       <div class="flex flex-col items-center gap-4">
@@ -102,10 +120,10 @@
               </span>
               <button
                 class="ml-2 text-text-secondary hover:text-white transition-colors"
-                on:click={() => toggleScan(item.title)}
+                on:click={() => toggleScan(item.year ? `${item.title} (${item.year})` : item.title)}
                 aria-label="Toggle scan details"
               >
-                {#if expanded[item.title]}
+                {#if expanded[item.year ? `${item.title} (${item.year})` : item.title]}
                   <ChevronUp class="h-4 w-4" />
                 {:else}
                   <ChevronDown class="h-4 w-4" />
@@ -114,7 +132,7 @@
             </div>
           </div>
 
-          {#if expanded[item.title]}
+          {#if expanded[item.year ? `${item.title} (${item.year})` : item.title]}
             <div class="border-t border-border bg-bg-secondary/40">
               <div class="px-6 py-4 overflow-x-auto">
                 <table class="min-w-full text-[12px] text-text-secondary">
@@ -158,16 +176,30 @@
           {/if}
         </div>
       {/each}
-      <div class="flex justify-center">
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-white/15 text-text-secondary hover:bg-white/10"
-          on:click={() => loadLibrary(false)}
-          disabled={loading}
-        >
-          Load more
-        </Button>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+        <div class="text-[11px] text-text-tertiary">
+          Page {page} of {totalPages}
+        </div>
+        <div class="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/15 text-text-secondary hover:bg-white/10"
+            on:click={() => loadLibrary(page - 1)}
+            disabled={loading || page <= 1}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/15 text-text-secondary hover:bg-white/10"
+            on:click={() => loadLibrary(page + 1)}
+            disabled={loading || !hasMore}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   {/if}

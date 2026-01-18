@@ -138,13 +138,17 @@ class FileScanner:
                         file_path.name, e
                     )
 
+            status = "Has Plot" if has_plot else "Not Loaded"
+            if plot_marker_count > 1:
+                status = "Duplicate Plot"
+
             batch.append({
                 "path": str(file_path),
                 "name": file_path.name,
                 "has_plot": has_plot,
                 "plot_marker_count": plot_marker_count,
                 "duplicate_plot": plot_marker_count > 1,
-                "status": "Has Plot" if has_plot else "Not Loaded",
+                "status": status,
                 "summary": metadata.get("summary", ""),
                 "plot": metadata.get("summary", ""),
                 "title": metadata.get("title"),
