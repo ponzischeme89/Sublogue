@@ -82,7 +82,8 @@
   let pendingTitleOverride = null;
   let resultsListRef = null;
   let pendingForceReprocess = false;
-  let quoteStyle = 'sarcastic';
+  let cleanOnly = false;
+  let quoteStyle = "sarcastic";
   let initialLoading = true;
   let scanToastedError = false;
   let metadataOptions = [];
@@ -273,7 +274,12 @@
             files = [...files, ...data.batch];
 
             // Trigger auto-matching for the new batch if ResultsList is ready
-            if (resultsListRef && data.batch && data.batch.length > 0) {
+            if (
+              !cleanOnly &&
+              resultsListRef &&
+              data.batch &&
+              data.batch.length > 0
+            ) {
               console.log(
                 "Auto-matching new batch of",
                 data.batch.length,
@@ -327,7 +333,7 @@
                 Object.keys(existingMatches).length,
               );
 
-              if (resultsListRef) {
+              if (!cleanOnly && resultsListRef) {
                 // ALWAYS load existing matches from database first (even if empty, to reset state)
                 console.log(
                   "Loading existing matches into component:",
@@ -372,7 +378,8 @@
             }
             scanToastedError = true;
             addToast({
-              message: err.name === "AbortError" ? "Scan cancelled." : "Scan failed.",
+              message:
+                err.name === "AbortError" ? "Scan cancelled." : "Scan failed.",
               tone: err.name === "AbortError" ? "info" : "error",
             });
           },
@@ -387,7 +394,8 @@
       }
       if (!scanToastedError) {
         addToast({
-          message: err.name === "AbortError" ? "Scan cancelled." : "Scan failed.",
+          message:
+            err.name === "AbortError" ? "Scan cancelled." : "Scan failed.",
           tone: err.name === "AbortError" ? "info" : "error",
         });
       }
@@ -502,6 +510,7 @@
         duration,
         pendingTitleOverride,
         forceReprocess,
+        cleanOnly,
       );
       processingResults = response.results;
 
@@ -510,6 +519,15 @@
         files = files.map((file) => {
           const result = processingResults.find((r) => r.file === file.path);
           if (result) {
+            if (result.clean_only) {
+              return {
+                ...file,
+                status: result.status || (result.success ? "Cleaned" : "Error"),
+                summary: result.summary || file.summary || "",
+                clean_only: true,
+                clean_keywords: result.clean_keywords || [],
+              };
+            }
             return {
               ...file,
               status: result.status || (result.success ? "Processed" : "Error"),
@@ -554,10 +572,7 @@
   }
 
   function normalizePath(path) {
-    return (path || "")
-      .replace(/\//g, "\\")
-      .replace(/\\+$/, "")
-      .toLowerCase();
+    return (path || "").replace(/\//g, "\\").replace(/\\+$/, "").toLowerCase();
   }
 
   function findFolderRuleForDirectory(path, rules) {
@@ -668,370 +683,427 @@
       </div>
     </div>
   {:else}
-  <!-- Scan Panel -->
-  <Card className="bg-card" skeletonFlash={false}>
-    <CardHeader className="pb-4">
-      <CardTitle className="text-base">Scan your SRT files</CardTitle>
-      <CardDescription className="text-[13px]">
-        Scan folders for subtitles missing plot summaries
-      </CardDescription>
-    </CardHeader>
+    <!-- Scan Panel -->
+    <Card className="bg-card" skeletonFlash={false}>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-base">Scan Files</CardTitle>
+      </CardHeader>
 
-    <CardContent className="space-y-4">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div class="relative w-full">
-          <Folder class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-          <Input
-            type="text"
-            bind:value={directory}
-            placeholder="C:\Movies or /media/movies"
-            disabled={scanning}
-            className="h-11 font-mono text-[13px] w-full pl-10"
-          />
-        </div>
-        <Button
-          on:click={handleScan}
-          disabled={scanning || !directory}
-          size="lg"
-          className="h-11 px-6 whitespace-nowrap w-full sm:w-auto"
-        >
-          <Scan class="h-4 w-4" />
-          {scanning ? "Scanning..." : "Scan Directory"}
-        </Button>
-      </div>
-
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-        <span class="text-[13px] text-text-secondary whitespace-nowrap inline-flex items-center gap-2">
-          <Plug class="h-4 w-4 text-text-tertiary" />
-          Metadata Source
-        </span>
-
-        <Combobox
-          items={metadataOptions}
-          value={metadataProvider}
-          disabled={scanning || activeMetadataOptions.length === 0}
-          placeholder={
-            activeMetadataOptions.length === 0
-              ? "Enable a provider"
-              : "Select source"
-          }
-          className="w-full sm:min-w-[220px]"
-          on:change={(event) => selectMetadataSource(event.detail.value)}
-        >
-          <Plug slot="icon" class="h-4 w-4 text-text-tertiary" />
-        </Combobox>
-
-        <span class="text-[11px] text-text-tertiary sm:ml-2">
-          {activeMetadataOptions.length === 0
-            ? "Enable an integration in Settings to select a source."
-            : "Choose which API to use for fetching plot summaries"}
-        </span>
-        </div>
-
-      {#if error}
-        <div class="px-5 py-4 bg-red-500/5 border border-red-500/20 rounded-xl">
-          <p class="text-[13px] text-red-300">{error}</p>
-        </div>
-      {/if}
-
-      {#if scanning}
-        <div
-          class="px-6 py-5 bg-blue-500/5 border border-blue-500/20 rounded-xl"
-        >
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-            <div class="flex items-center gap-3">
-              <div
-                class="w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
-              ></div>
-              <span class="text-[13px] font-medium text-blue-300"
-                >{scanProgress.message}</span
-              >
-            </div>
-            <Button
-              on:click={cancelScan}
-              variant="outline"
-              size="sm"
-              className="border-red-500/60 text-red-400 hover:bg-red-500/10 w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
+      <CardContent className="space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative w-full">
+            <Folder
+              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
+            />
+            <Input
+              type="text"
+              bind:value={directory}
+              placeholder="C:\Movies or /media/movies"
+              disabled={scanning}
+              className="h-11 font-mono text-[13px] w-full pl-10"
+            />
           </div>
+          <Button
+            on:click={handleScan}
+            disabled={scanning || !directory}
+            size="lg"
+            className="h-11 px-6 whitespace-nowrap w-full sm:w-auto"
+          >
+            <Scan class="h-4 w-4" />
+            {scanning ? "Scanning..." : "Scan Directory"}
+          </Button>
+        </div>
 
-          {#if scanProgress.filesFound > 0}
-            <div
-              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[12px] text-text-secondary"
-            >
-              <span
-                >Files found: <span class="text-white font-medium"
-                  >{scanProgress.filesFound}</span
-                ></span
-              >
-              <span class="text-text-tertiary">Scanning in progress...</span>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <span
+            class="text-[13px] text-text-secondary whitespace-nowrap inline-flex items-center gap-2"
+          >
+            <Plug class="h-4 w-4 text-text-tertiary" />
+            Metadata Source
+          </span>
+
+          <Combobox
+            items={metadataOptions}
+            value={metadataProvider}
+            disabled={scanning || activeMetadataOptions.length === 0}
+            placeholder={activeMetadataOptions.length === 0
+              ? "Enable a provider"
+              : "Select source"}
+            className="w-full sm:min-w-[220px]"
+            on:change={(event) => selectMetadataSource(event.detail.value)}
+          >
+            <Plug slot="icon" class="h-4 w-4 text-text-tertiary" />
+          </Combobox>
+
+          <span class="text-[11px] text-text-tertiary sm:ml-2">
+            {cleanOnly
+              ? "Clean-only mode skips metadata lookups."
+              : activeMetadataOptions.length === 0
+                ? "Enable an integration in Settings to select a source."
+                : "Choose which API to use for fetching plot summaries"}
+          </span>
+        </div>
+
+        <label
+          class="flex items-center justify-between gap-4 rounded-xl border border-border bg-bg-secondary/40 px-4 py-3"
+        >
+          <div>
+            <div class="text-[13px] font-medium">Run as "Clean-only scan"</div>
+            <div class="text-[11px] text-text-tertiary">
+              Remove watermark lines (YTS, YIFY, etc) without adding plots.
             </div>
-            {#if scanProgress.startedAt}
-              <div class="mt-2 text-[11px] text-text-tertiary">
-                Started at {scanProgress.startedAt.toLocaleTimeString()}
-                {#if scanProgress.estimatedFinishAt}
-                  · Estimated finish {scanProgress.estimatedFinishAt.toLocaleTimeString()}
-                {/if}
+          </div>
+          <span class="relative inline-flex items-center">
+            <input
+              type="checkbox"
+              bind:checked={cleanOnly}
+              class="sr-only peer"
+            />
+            <span
+              class="h-6 w-11 rounded-full border border-border bg-bg-card transition-colors peer-checked:bg-accent peer-checked:border-accent/60"
+            ></span>
+            <span
+              class="absolute left-0.5 h-5 w-5 rounded-full bg-text-tertiary transition-transform peer-checked:translate-x-5 peer-checked:bg-bg-primary"
+            ></span>
+          </span>
+        </label>
+
+        {#if error}
+          <div
+            class="px-5 py-4 bg-red-500/5 border border-red-500/20 rounded-xl"
+          >
+            <p class="text-[13px] text-red-300">{error}</p>
+          </div>
+        {/if}
+
+        {#if scanning}
+          <div
+            class="px-6 py-5 bg-blue-500/5 border border-blue-500/20 rounded-xl"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
+                ></div>
+                <span class="text-[13px] font-medium text-blue-300"
+                  >{scanProgress.message}</span
+                >
+              </div>
+              <Button
+                on:click={cancelScan}
+                variant="outline"
+                size="sm"
+                className="border-red-500/60 text-red-400 hover:bg-red-500/10 w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+            </div>
+
+            {#if scanProgress.filesFound > 0}
+              <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[12px] text-text-secondary"
+              >
+                <span
+                  >Files found: <span class="text-white font-medium"
+                    >{scanProgress.filesFound}</span
+                  ></span
+                >
+                <span class="text-text-tertiary">Scanning in progress...</span>
+              </div>
+              {#if scanProgress.startedAt}
+                <div class="mt-2 text-[11px] text-text-tertiary">
+                  Started at {scanProgress.startedAt.toLocaleTimeString()}
+                  {#if scanProgress.estimatedFinishAt}
+                    · Estimated finish {scanProgress.estimatedFinishAt.toLocaleTimeString()}
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Progress bar -->
+              <div
+                class="mt-3 h-1.5 bg-bg-secondary rounded-full overflow-hidden"
+              >
+                <div
+                  class="h-full bg-blue-500 rounded-full animate-pulse"
+                  style="width: 100%"
+                ></div>
               </div>
             {/if}
-
-            <!-- Progress bar -->
-            <div
-              class="mt-3 h-1.5 bg-bg-secondary rounded-full overflow-hidden"
-            >
-              <div
-                class="h-full bg-blue-500 rounded-full animate-pulse"
-                style="width: 100%"
-              ></div>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </CardContent>
-  </Card>
-
-  <!-- Save Directory Prompt -->
-  {#if showSaveDirectoryPrompt}
-    <div class="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-6">
-      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <Info class="w-5 h-5 text-blue-400" />
-            <h3 class="text-[13px] font-medium text-blue-300">
-              Save as Default Directory?
-            </h3>
           </div>
-          <p class="text-[11px] text-text-secondary">
-            Would you like to make <span class="font-mono text-white"
-              >{directory}</span
-            > as your default scan directory?
-          </p>
-        </div>
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <Button
-            on:click={dismissDirectoryPrompt}
-            disabled={savingDirectory}
-            variant="ghost"
-            size="sm"
-            className="text-text-secondary w-full sm:w-auto"
+        {/if}
+      </CardContent>
+    </Card>
+
+    <!-- Save Directory Prompt -->
+    {#if showSaveDirectoryPrompt}
+      <div class="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-6">
+        <div
+          class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+        >
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <Info class="w-5 h-5 text-blue-400" />
+              <h3 class="text-[13px] font-medium text-blue-300">
+                Save as Default Directory?
+              </h3>
+            </div>
+            <p class="text-[11px] text-text-secondary">
+              Would you like to make <span class="font-mono text-white"
+                >{directory}</span
+              > as your default scan directory?
+            </p>
+          </div>
+          <div
+            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto"
           >
-            Not now
-          </Button>
-          <Button
-            on:click={saveAsDefaultDirectory}
-            disabled={savingDirectory}
-            size="sm"
-            className="bg-blue-500 text-white hover:bg-blue-600 w-full sm:w-auto"
-          >
-            {savingDirectory ? "Saving..." : "Save"}
-          </Button>
+            <Button
+              on:click={dismissDirectoryPrompt}
+              disabled={savingDirectory}
+              variant="ghost"
+              size="sm"
+              className="text-text-secondary w-full sm:w-auto"
+            >
+              Not now
+            </Button>
+            <Button
+              on:click={saveAsDefaultDirectory}
+              disabled={savingDirectory}
+              size="sm"
+              className="bg-blue-500 text-white hover:bg-blue-600 w-full sm:w-auto"
+            >
+              {savingDirectory ? "Saving..." : "Save"}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  {/if}
+    {/if}
 
-  <!-- Results Area -->
-  {#if hasScanned}
-    <div class="space-y-6">
-      {#if files.length > 0}
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div class="flex flex-wrap items-center gap-4">
-            <h3 class="text-[13px] font-medium text-text-secondary">
-              {files.length}
-              {files.length !== 1 ? "files" : "file"} found
-            </h3>
-            <span class="text-[13px] text-text-tertiary">
-              {selectedFilePaths.length} selected
-            </span>
-          </div>
-          <Button
-            on:click={clearResults}
-            variant="outline"
-            size="sm"
-            className="border-red-500 text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto"
+    <!-- Results Area -->
+    {#if hasScanned}
+      <div class="space-y-6">
+        {#if files.length > 0}
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           >
-            Clear Results
-          </Button>
-        </div>
-
-        <ResultsList
-          bind:this={resultsListRef}
-          {files}
-          onSelectionChange={handleSelectionChange}
-          disabled={!apiConfigured || processing}
-          {metadataProvider}
-          {metadataLanguage}
-          activeIntegrations={{
-            omdb: omdbEnabled,
-            tmdb: tmdbEnabled,
-            tvmaze: tvmazeEnabled,
-            wikipedia: wikipediaEnabled,
-          }}
-          loading={processing}
-          on:processSingle={handleProcessSingle}
-          on:processBulk={handleProcessBulk}
-          on:metadataSourceChange={handleMetadataSourceChange}
-        />
-      {:else}
-        <div class="border border-border rounded-2xl p-12 text-center">
-          <div class="flex flex-col items-center gap-4">
-            <FileText class="w-12 h-12 text-text-tertiary" />
-            <div>
-              <p class="text-[13px] text-text-secondary mb-1">
-                No subtitle files found
-              </p>
-              <p class="text-[11px] text-text-tertiary">
-                Try scanning a different directory
-              </p>
+            <div class="flex flex-wrap items-center gap-4">
+              <h3 class="text-[13px] font-medium text-text-secondary">
+                {files.length}
+                {files.length !== 1 ? "files" : "file"} found
+              </h3>
+              <span class="text-[13px] text-text-tertiary">
+                {selectedFilePaths.length} selected
+              </span>
             </div>
             <Button
               on:click={clearResults}
-              variant="ghost"
-              size="sm"
-              className="text-text-secondary"
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      {/if}
-    </div>
-  {:else if !scanning && showTutorial}
-    <!-- First-time tutorial -->
-    <div class="rounded-2xl border border-border bg-gradient-to-br from-[#101010] via-[#0c0c0c] to-[#0b0b0b] p-6 sm:p-8">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <div class="flex-1 space-y-4">
-          <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
-            First time setup
-          </div>
-          <div class="space-y-2">
-            <h3 class="text-lg font-semibold text-white">
-              Enrich your subtitle library in minutes
-            </h3>
-            <p class="text-[13px] text-text-secondary">
-              Follow the steps below to connect your metadata source and scan a directory.
-            </p>
-          </div>
-          <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-            <TypewriterQuote style={quoteStyle} />
-            <p class="text-[11px] text-text-tertiary mt-1">
-              Enter a directory path above to begin.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-3">
-            <Button
-              on:click={() => onOpenSettings && onOpenSettings()}
-              size="sm"
-              className="bg-white text-black hover:bg-white/90"
-            >
-              Open Settings
-            </Button>
-            <Button
-              on:click={() => onOpenHistory && onOpenHistory()}
               variant="outline"
               size="sm"
-              className="border-white/20 text-text-secondary hover:bg-white/10"
+              className="border-red-500 text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto"
             >
-              View History
+              Clear Results
             </Button>
           </div>
-        </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:max-w-sm w-full">
-          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-            <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-full bg-white text-black flex items-center justify-center text-xs font-semibold">
-                1
-              </div>
+          <ResultsList
+            bind:this={resultsListRef}
+            {files}
+            onSelectionChange={handleSelectionChange}
+            disabled={(!apiConfigured && !cleanOnly) || processing}
+            {metadataProvider}
+            {metadataLanguage}
+            cleanMode={cleanOnly}
+            activeIntegrations={{
+              omdb: omdbEnabled,
+              tmdb: tmdbEnabled,
+              tvmaze: tvmazeEnabled,
+              wikipedia: wikipediaEnabled,
+            }}
+            loading={processing}
+            on:processSingle={handleProcessSingle}
+            on:processBulk={handleProcessBulk}
+            on:metadataSourceChange={handleMetadataSourceChange}
+          />
+        {:else}
+          <div class="border border-border rounded-2xl p-12 text-center">
+            <div class="flex flex-col items-center gap-4">
+              <FileText class="w-12 h-12 text-text-tertiary" />
               <div>
-                <p class="text-[13px] font-medium text-white">Connect metadata</p>
+                <p class="text-[13px] text-text-secondary mb-1">
+                  No subtitle files found
+                </p>
                 <p class="text-[11px] text-text-tertiary">
-                  Add an API key or enable TVmaze in Settings.
+                  Try scanning a different directory
                 </p>
               </div>
+              <Button
+                on:click={clearResults}
+                variant="ghost"
+                size="sm"
+                className="text-text-secondary"
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        {/if}
+      </div>
+    {:else if !scanning && showTutorial}
+      <!-- First-time tutorial -->
+      <div
+        class="rounded-2xl border border-border bg-gradient-to-br from-[#101010] via-[#0c0c0c] to-[#0b0b0b] p-6 sm:p-8"
+      >
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div class="flex-1 space-y-4">
+            <div
+              class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-text-tertiary"
+            >
+              First time setup
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-lg font-semibold text-white">
+                Enrich your subtitle library in minutes
+              </h3>
+              <p class="text-[13px] text-text-secondary">
+                Follow the steps below to connect your metadata source and scan
+                a directory.
+              </p>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+              <TypewriterQuote style={quoteStyle} />
+              <p class="text-[11px] text-text-tertiary mt-1">
+                Enter a directory path above to begin.
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <Button
+                on:click={() => onOpenSettings && onOpenSettings()}
+                size="sm"
+                className="bg-white text-black hover:bg-white/90"
+              >
+                Open Settings
+              </Button>
+              <Button
+                on:click={() => onOpenHistory && onOpenHistory()}
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-text-secondary hover:bg-white/10"
+              >
+                View History
+              </Button>
             </div>
           </div>
 
-          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-            <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-full border border-white/20 text-white flex items-center justify-center text-xs font-semibold">
-                2
-              </div>
-              <div>
-                <p class="text-[13px] font-medium text-white">Choose a source</p>
-                <p class="text-[11px] text-text-tertiary">
-                  Pick OMDb, TMDb, TVmaze, or both for the best match rate.
-                </p>
+          <div
+            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:max-w-sm w-full"
+          >
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="h-9 w-9 rounded-full bg-white text-black flex items-center justify-center text-xs font-semibold"
+                >
+                  1
+                </div>
+                <div>
+                  <p class="text-[13px] font-medium text-white">
+                    Connect metadata
+                  </p>
+                  <p class="text-[11px] text-text-tertiary">
+                    Add an API key or enable TVmaze in Settings.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-            <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-full border border-white/20 text-white flex items-center justify-center text-xs font-semibold">
-                3
-              </div>
-              <div>
-                <p class="text-[13px] font-medium text-white">Scan & enrich</p>
-                <p class="text-[11px] text-text-tertiary">
-                  Scan a folder and apply summaries to selected subtitles.
-                </p>
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="h-9 w-9 rounded-full border border-white/20 text-white flex items-center justify-center text-xs font-semibold"
+                >
+                  2
+                </div>
+                <div>
+                  <p class="text-[13px] font-medium text-white">
+                    Choose a source
+                  </p>
+                  <p class="text-[11px] text-text-tertiary">
+                    Pick OMDb, TMDb, TVmaze, or both for the best match rate.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-            <div class="text-[10px] uppercase tracking-[0.2em] text-text-tertiary mb-3">
-              Progress
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="h-9 w-9 rounded-full border border-white/20 text-white flex items-center justify-center text-xs font-semibold"
+                >
+                  3
+                </div>
+                <div>
+                  <p class="text-[13px] font-medium text-white">
+                    Scan, clean, enrich
+                  </p>
+                  <p class="text-[11px] text-text-tertiary">
+                    Scan a folder to clean subtitles and add plot summaries.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div class="space-y-2 text-[12px] text-text-secondary">
-              <div class="flex items-center justify-between">
-                <span>API key connected</span>
-                {#if apiConfigured}
-                  <span class="text-green-400">Done</span>
-                {:else}
-                  <span class="text-text-tertiary">Pending</span>
-                {/if}
+
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div
+                class="text-[10px] uppercase tracking-[0.2em] text-text-tertiary mb-3"
+              >
+                Progress
               </div>
-              <div class="flex items-center justify-between">
-                <span>Metadata source selected</span>
-                {#if metadataSelected}
-                  <span class="text-green-400">Done</span>
-                {:else}
-                  <span class="text-text-tertiary">Pending</span>
-                {/if}
-              </div>
-              <div class="flex items-center justify-between">
-                <span>First scan completed</span>
-                {#if hasScanned}
-                  <span class="text-green-400">Done</span>
-                {:else}
-                  <span class="text-text-tertiary">Pending</span>
-                {/if}
+              <div class="space-y-2 text-[12px] text-text-secondary">
+                <div class="flex items-center justify-between">
+                  <span>API key connected</span>
+                  {#if apiConfigured}
+                    <span class="text-green-400">Done</span>
+                  {:else}
+                    <span class="text-text-tertiary">Pending</span>
+                  {/if}
+                </div>
+                <div class="flex items-center justify-between">
+                  <span>Metadata source selected</span>
+                  {#if metadataSelected}
+                    <span class="text-green-400">Done</span>
+                  {:else}
+                    <span class="text-text-tertiary">Pending</span>
+                  {/if}
+                </div>
+                <div class="flex items-center justify-between">
+                  <span>First scan completed</span>
+                  {#if hasScanned}
+                    <span class="text-green-400">Done</span>
+                  {:else}
+                    <span class="text-text-tertiary">Pending</span>
+                  {/if}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  {:else if !scanning}
-    <!-- Waiting State -->
-    <div class="border border-border rounded-2xl p-12 text-center">
-      <div class="flex flex-col items-center gap-4">
-        <div class="relative">
-          <Scan class="w-16 h-16 text-text-tertiary animate-pulse" />
-        </div>
-        <div>
-          <TypewriterQuote style={quoteStyle} />
-          <p class="text-[11px] text-text-tertiary">
-            Enter a directory path above to begin
-          </p>
+    {:else if !scanning}
+      <!-- Waiting State -->
+      <div class="border border-border rounded-2xl p-12 text-center">
+        <div class="flex flex-col items-center gap-4">
+          <div class="relative">
+            <Scan class="w-16 h-16 text-text-tertiary animate-pulse" />
+          </div>
+          <div>
+            <TypewriterQuote style={quoteStyle} />
+            <p class="text-[11px] text-text-tertiary">
+              Enter a directory path above to begin
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  {/if}
+    {/if}
   {/if}
 </div>
 

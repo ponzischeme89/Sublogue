@@ -24,6 +24,7 @@
   export let disabled = false;
   export let metadataProvider = "omdb";
   export let metadataLanguage = "";
+  export let cleanMode = false;
   export let activeIntegrations = {
     omdb: true,
     tmdb: true,
@@ -43,6 +44,12 @@
   );
   $: pageStart = (currentPage - 1) * itemsPerPage + 1;
   $: pageEnd = Math.min(currentPage * itemsPerPage, files.length);
+  $: cleanModeWithKeywords = paginatedFiles.filter(
+    (file) => file.clean_keywords && file.clean_keywords.length > 0,
+  );
+  $: cleanModeNoKeywords = paginatedFiles.filter(
+    (file) => !file.clean_keywords || file.clean_keywords.length === 0,
+  );
 
   function goToPage(page) {
     currentPage = Math.max(1, Math.min(page, totalPages));
@@ -814,6 +821,12 @@
   $: if (!hasActiveIntegrations && showMetadataDropup) {
     showMetadataDropup = false;
   }
+  $: if (cleanMode && showMetadataDropup) {
+    showMetadataDropup = false;
+  }
+  $: if (cleanMode && openSearchDropdown) {
+    openSearchDropdown = null;
+  }
   $: metadataDropdownOptions = [
     {
       value: "omdb",
@@ -972,6 +985,7 @@
             </span>
           </div>
           <div class="flex items-center gap-3">
+            {#if !cleanMode}
             <!-- Metadata Source Selector -->
             <div class="relative">
               <button
@@ -1120,6 +1134,7 @@
                 Bulk Match
               {/if}
             </Button>
+            {/if}
 
             <Button
               on:click={handleBulkProcess}
@@ -1127,7 +1142,7 @@
               size="sm"
               className="bg-white text-black hover:bg-white/90"
             >
-              Add Subtitles to Selected
+              {cleanMode ? "Clean Selected" : "Add Subtitles to Selected"}
             </Button>
           </div>
         </div>
@@ -1151,7 +1166,9 @@
               <TableHead className="w-10"></TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-[38%]">Filename</TableHead>
-              <TableHead className="w-[28%]">Matched Result</TableHead>
+              <TableHead className="w-[28%]">
+                {cleanMode ? "Clean Scan" : "Matched Result"}
+              </TableHead>
               <TableHead className="w-64 text-right"></TableHead>
             </TableRow>
           </TableHeader>
@@ -1182,6 +1199,206 @@
                   </TableCell>
                 </TableRow>
               {/each}
+            {:else if cleanMode}
+              {#if cleanModeWithKeywords.length > 0}
+                <TableRow className="bg-bg-secondary/60">
+                  <TableCell colspan="6">
+                    <div class="text-[11px] uppercase tracking-wide text-text-tertiary">
+                      Results With Keywords
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {#each cleanModeWithKeywords as file (file.path)}
+                  <TableRow data-state={file.selected ? "selected" : undefined}>
+                    <TableCell className="w-12">
+                      <input
+                        type="checkbox"
+                        checked={file.selected}
+                        on:change={() => toggleSelection(file)}
+                        class="h-4 w-4 rounded border-input bg-background text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </TableCell>
+                    <TableCell className="w-10">
+                      <button
+                        on:click={() => toggleRowExpand(file.path)}
+                        class="text-text-tertiary hover:text-foreground transition-colors"
+                        title="Toggle details"
+                      >
+                        <svg
+                          class="w-4 h-4 transition-transform {expandedRows[
+                            file.path
+                          ]
+                            ? 'rotate-180'
+                            : ''}"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    </TableCell>
+                    <TableCell className="w-28">
+                      <StatusBadge status={file.status} />
+                    </TableCell>
+                    <TableCell className="min-w-0">
+                      <span
+                        class="text-[13px] font-mono truncate block"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
+                    </TableCell>
+                    <TableCell className="min-w-0">
+                      <div class="text-[12px] text-text-secondary">
+                        Detected: {file.clean_keywords.join(", ")}
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-64">
+                      <div class="flex items-center justify-end gap-2">
+                        <span class="text-[11px] text-text-tertiary">
+                          Clean only
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {#if expandedRows[file.path]}
+                    <TableRow className="bg-muted/40">
+                      <TableCell colspan="6">
+                        <div class="ml-16 space-y-3">
+                          <div>
+                            <div
+                              class="text-[10px] text-text-tertiary uppercase tracking-wide mb-1.5"
+                            >
+                              Detected Keywords
+                            </div>
+                            <div class="text-[13px] text-text-secondary">
+                              {file.clean_keywords.join(", ")}
+                            </div>
+                          </div>
+                          <div>
+                            <div
+                              class="text-[10px] text-text-tertiary uppercase tracking-wide mb-1.5"
+                            >
+                              Cleanup Summary
+                            </div>
+                            <div
+                              class="text-[13px] text-text-secondary leading-relaxed bg-bg-primary/50 border border-white/[0.08] rounded-lg p-3"
+                            >
+                              {file.summary || "No changes needed"}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  {/if}
+                {/each}
+              {/if}
+
+              {#if cleanModeNoKeywords.length > 0}
+                <TableRow className="bg-bg-secondary/60">
+                  <TableCell colspan="6">
+                    <div class="text-[11px] uppercase tracking-wide text-text-tertiary">
+                      Clean Files (No Keywords Found)
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {#each cleanModeNoKeywords as file (file.path)}
+                  <TableRow data-state={file.selected ? "selected" : undefined}>
+                    <TableCell className="w-12">
+                      <input
+                        type="checkbox"
+                        checked={file.selected}
+                        on:change={() => toggleSelection(file)}
+                        class="h-4 w-4 rounded border-input bg-background text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </TableCell>
+                    <TableCell className="w-10">
+                      <button
+                        on:click={() => toggleRowExpand(file.path)}
+                        class="text-text-tertiary hover:text-foreground transition-colors"
+                        title="Toggle details"
+                      >
+                        <svg
+                          class="w-4 h-4 transition-transform {expandedRows[
+                            file.path
+                          ]
+                            ? 'rotate-180'
+                            : ''}"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    </TableCell>
+                    <TableCell className="w-28">
+                      <StatusBadge status={file.status} />
+                    </TableCell>
+                    <TableCell className="min-w-0">
+                      <span
+                        class="text-[13px] font-mono truncate block"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
+                    </TableCell>
+                    <TableCell className="min-w-0">
+                      <div class="text-[12px] text-text-secondary">
+                        Detected: None
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-64">
+                      <div class="flex items-center justify-end gap-2">
+                        <span class="text-[11px] text-text-tertiary">
+                          Clean only
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {#if expandedRows[file.path]}
+                    <TableRow className="bg-muted/40">
+                      <TableCell colspan="6">
+                        <div class="ml-16 space-y-3">
+                          <div>
+                            <div
+                              class="text-[10px] text-text-tertiary uppercase tracking-wide mb-1.5"
+                            >
+                              Detected Keywords
+                            </div>
+                            <div class="text-[13px] text-text-secondary">
+                              None
+                            </div>
+                          </div>
+                          <div>
+                            <div
+                              class="text-[10px] text-text-tertiary uppercase tracking-wide mb-1.5"
+                            >
+                              Cleanup Summary
+                            </div>
+                            <div
+                              class="text-[13px] text-text-secondary leading-relaxed bg-bg-primary/50 border border-white/[0.08] rounded-lg p-3"
+                            >
+                              {file.summary || "No changes needed"}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  {/if}
+                {/each}
+              {/if}
             {:else}
               {#each paginatedFiles as file (file.path)}
                 <TableRow data-state={file.selected ? "selected" : undefined}>
@@ -1230,6 +1447,15 @@
                     </span>
                   </TableCell>
                   <TableCell className="min-w-0">
+                    {#if cleanMode}
+                      <div class="text-[12px] text-text-secondary">
+                        {#if file.clean_keywords && file.clean_keywords.length > 0}
+                          Detected: {file.clean_keywords.join(", ")}
+                        {:else}
+                          Detected: None
+                        {/if}
+                      </div>
+                    {:else}
                     <div class="flex items-center gap-2">
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
@@ -1359,9 +1585,15 @@
                       {/if}
                     {/if}
                   </div>
+                  {/if}
                 </TableCell>
                 <TableCell className="w-64">
                   <div class="flex items-center justify-end gap-2">
+                    {#if cleanMode}
+                      <span class="text-[11px] text-text-tertiary">
+                        Clean only
+                      </span>
+                    {:else}
                     {#if suggestedMatches[file.path]}
                       <!-- Show quick apply button for suggested matches -->
                       <Button
@@ -1414,6 +1646,7 @@
                           ? "Update"
                           : "Add Plot"}
                     </Button>
+                    {/if}
                   </div>
                 </TableCell>
               </TableRow>
@@ -1422,6 +1655,36 @@
               {#if expandedRows[file.path]}
                 <TableRow className="bg-muted/40">
                   <TableCell colspan="6">
+                    {#if cleanMode}
+                      <div class="ml-16 space-y-3">
+                        <div>
+                          <div
+                            class="text-[10px] text-text-tertiary uppercase tracking-wide mb-1.5"
+                          >
+                            Detected Keywords
+                          </div>
+                          <div class="text-[13px] text-text-secondary">
+                            {#if file.clean_keywords && file.clean_keywords.length > 0}
+                              {file.clean_keywords.join(", ")}
+                            {:else}
+                              None
+                            {/if}
+                          </div>
+                        </div>
+                        <div>
+                          <div
+                            class="text-[10px] text-text-tertiary uppercase tracking-wide mb-1.5"
+                          >
+                            Cleanup Summary
+                          </div>
+                          <div
+                            class="text-[13px] text-text-secondary leading-relaxed bg-bg-primary/50 border border-white/[0.08] rounded-lg p-3"
+                          >
+                            {file.summary || "No changes needed"}
+                          </div>
+                        </div>
+                      </div>
+                    {:else}
                     <div class="grid grid-cols-3 gap-6 ml-16">
                       <!-- Rating -->
                       <div>
@@ -1483,6 +1746,7 @@
                         </div>
                       </div>
                     </div>
+                    {/if}
                   </TableCell>
                 </TableRow>
               {/if}
@@ -1569,7 +1833,7 @@
     </div>
 
     <!-- Bulk Apply Section -->
-    {#if hasMatches || bulkApplying}
+    {#if !cleanMode && (hasMatches || bulkApplying)}
       <div
         class="bg-blue-500/10 border border-blue-500/30 rounded-xl px-6 py-4"
       >
@@ -2029,17 +2293,19 @@
           >
             Close
           </button>
-          <button
-            on:click={() => {
-              handleProcessSingle(previewFile);
-              closePreview();
-            }}
-            disabled={disabled || previewFile.status === "Has Plot"}
-            class="px-5 py-2.5 bg-white hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed
-                   text-black text-[13px] font-medium rounded-xl transition-all"
-          >
-            Add Subtitles
-          </button>
+          {#if !cleanMode}
+            <button
+              on:click={() => {
+                handleProcessSingle(previewFile);
+                closePreview();
+              }}
+              disabled={disabled || previewFile.status === "Has Plot"}
+              class="px-5 py-2.5 bg-white hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed
+                     text-black text-[13px] font-medium rounded-xl transition-all"
+            >
+              Add Subtitles
+            </button>
+          {/if}
         </div>
       </div>
     </div>

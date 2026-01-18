@@ -184,6 +184,40 @@ class FolderRule(Base):
         return f"<FolderRule(id={self.id}, directory='{self.directory}')>"
 
 
+class AutomationRule(Base):
+    """Automation rules for scheduled tasks"""
+    __tablename__ = 'automation_rules'
+
+    id = Column(String(64), primary_key=True)
+    name = Column(String(255), nullable=False)
+    schedule = Column(String(100), nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    patterns = Column(Text, nullable=False)  # JSON list
+    target_folders = Column(Text, nullable=False)  # JSON list
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<AutomationRule(id='{self.id}', name='{self.name}', enabled={self.enabled})>"
+
+
+class AutomationLog(Base):
+    """Automation run log entries"""
+    __tablename__ = 'automation_logs'
+
+    id = Column(Integer, primary_key=True)
+    rule_id = Column(String(64), nullable=False, index=True)
+    file_path = Column(String(500), nullable=False)
+    modified = Column(Boolean, default=False)
+    removed_lines = Column(Integer, default=0)
+    dry_run = Column(Boolean, default=False)
+    error_message = Column(Text)
+    run_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<AutomationLog(rule_id='{self.rule_id}', file_path='{self.file_path}')>"
+
+
 class DatabaseManager:
     """Manages database connections and operations"""
 
@@ -1030,6 +1064,112 @@ class DatabaseManager:
             session.rollback()
             logger.error(f"Error deleting folder rule: {e}")
             return False
+        finally:
+            session.close()
+
+    # ============ AUTOMATION RULES OPERATIONS ============
+
+    def get_automation_rules(self):
+        """Get all automation rules"""
+        session = self.get_session()
+        try:
+            rules = session.query(AutomationRule).order_by(AutomationRule.created_at.asc()).all()
+            result = []
+            for rule in rules:
+                result.append({
+                    "id": rule.id,
+                    "name": rule.name,
+                    "schedule": rule.schedule,
+                    "enabled": rule.enabled,
+                    "patterns": json.loads(rule.patterns) if rule.patterns else [],
+                    "target_folders": json.loads(rule.target_folders) if rule.target_folders else [],
+                    "created_at": rule.created_at.isoformat() if rule.created_at else None,
+                    "updated_at": rule.updated_at.isoformat() if rule.updated_at else None
+                })
+            return result
+        finally:
+            session.close()
+
+    def get_automation_rule(self, rule_id):
+        """Get a single automation rule"""
+        session = self.get_session()
+        try:
+            rule = session.query(AutomationRule).filter_by(id=rule_id).first()
+            if not rule:
+                return None
+            return {
+                "id": rule.id,
+                "name": rule.name,
+                "schedule": rule.schedule,
+                "enabled": rule.enabled,
+                "patterns": json.loads(rule.patterns) if rule.patterns else [],
+                "target_folders": json.loads(rule.target_folders) if rule.target_folders else [],
+                "created_at": rule.created_at.isoformat() if rule.created_at else None,
+                "updated_at": rule.updated_at.isoformat() if rule.updated_at else None
+            }
+        finally:
+            session.close()
+
+    def upsert_automation_rule(self, rule_data):
+        """Create or update an automation rule"""
+        session = self.get_session()
+        try:
+            rule_id = rule_data["id"]
+            rule = session.query(AutomationRule).filter_by(id=rule_id).first()
+            if not rule:
+                rule = AutomationRule(id=rule_id)
+                session.add(rule)
+
+            rule.name = rule_data["name"]
+            rule.schedule = rule_data["schedule"]
+            rule.enabled = bool(rule_data.get("enabled", True))
+            rule.patterns = json.dumps(rule_data.get("patterns", []))
+            rule.target_folders = json.dumps(rule_data.get("target_folders", []))
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error saving automation rule: {e}")
+            return False
+        finally:
+            session.close()
+
+    def delete_automation_rule(self, rule_id):
+        """Delete an automation rule"""
+        session = self.get_session()
+        try:
+            rule = session.query(AutomationRule).filter_by(id=rule_id).first()
+            if rule:
+                session.delete(rule)
+                session.commit()
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error deleting automation rule: {e}")
+            return False
+        finally:
+            session.close()
+
+    def add_automation_log(self, rule_id, file_path, modified, removed_lines, dry_run=False, error_message=None):
+        """Add an automation log entry"""
+        session = self.get_session()
+        try:
+            entry = AutomationLog(
+                rule_id=rule_id,
+                file_path=file_path,
+                modified=bool(modified),
+                removed_lines=int(removed_lines or 0),
+                dry_run=bool(dry_run),
+                error_message=error_message
+            )
+            session.add(entry)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error saving automation log: {e}")
+            raise
         finally:
             session.close()
 

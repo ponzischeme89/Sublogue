@@ -6,6 +6,9 @@ aiohttp>=3.9.0
 # Database
 sqlalchemy>=2.0.0
 
+# Scheduler
+apscheduler>=3.10.4
+
 # Environment
 python-dotenv>=1.0.0
 

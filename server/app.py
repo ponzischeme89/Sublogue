@@ -1,9 +1,12 @@
 import asyncio
+import atexit
 import json
 import os
 import threading
 import time
 import re
+import uuid
+import signal
 from difflib import SequenceMatcher
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,9 +21,12 @@ from core.tvmaze_client import TVMazeClient
 from core.wikipedia_client import WikipediaClient
 from core.subtitle_processor import SubtitleProcessor, SubtitleFormatOptions, SUBLOGUE_TOKEN_PATTERN, SUBLOGUE_SENTINEL
 from core.keyword_stripper import get_stripper
+from core.keyword_stripper import get_stripper
 from core.file_scanner import FileScanner
 from core.database import DatabaseManager
 from logging_utils import configure_logging, get_logger
+from automations.engine import AutomationEngine
+from apscheduler.triggers.cron import CronTrigger
 
 # Configure logging
 configure_logging()
@@ -39,6 +45,7 @@ tmdb_client = None
 tvmaze_client = None
 wikipedia_client = None
 processor = None
+automation_engine = None
 
 # In-memory scan state (still used for current session)
 scan_state = {
@@ -71,7 +78,11 @@ def perform_scheduled_scan(directory):
     start_time = time.time()
     files = []
 
-    for batch in FileScanner.scan_directory(directory, batch_size=10):
+    for batch in FileScanner.scan_directory(
+        directory,
+        batch_size=10,
+        detect_cleanup_keywords=True,
+    ):
         files.extend(batch)
 
     scan_duration_ms = int((time.time() - start_time) * 1000)
@@ -127,6 +138,31 @@ def start_scheduled_scan_worker():
         return
     scheduled_scan_thread = threading.Thread(target=scheduled_scan_worker, daemon=True)
     scheduled_scan_thread.start()
+
+
+def start_automation_engine():
+    """Start automation scheduler once."""
+    global automation_engine
+    if automation_engine is None:
+        automation_engine = AutomationEngine(db)
+    automation_engine.start()
+
+
+def stop_automation_engine():
+    """Stop automation scheduler."""
+    if automation_engine:
+        automation_engine.shutdown()
+
+
+def start_automation_engine_async():
+    """Start automation scheduler in a background thread."""
+    def _run():
+        try:
+            start_automation_engine()
+        except Exception as e:
+            logger.exception("Automation engine failed to start: %s", e)
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 def initialize_clients():
@@ -189,6 +225,8 @@ def initialize_clients():
     else:
         logger.warning("No metadata providers configured")
 
+    _apply_cleanup_keywords_from_settings()
+
 
 # Migrate existing settings to database on startup
 def migrate_settings():
@@ -219,6 +257,27 @@ def _get_str_setting(key: str, default: str) -> str:
     if value is None:
         return default
     return str(value)
+
+def _normalize_keyword_list(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if isinstance(value, str):
+        parts = re.split(r"[\n,]+", value)
+        return [p.strip() for p in parts if p.strip()]
+    return [str(value).strip()] if str(value).strip() else []
+
+def _apply_cleanup_keywords_from_settings():
+    keywords = _normalize_keyword_list(db.get_setting("clean_subtitle_force_remove", []))
+    get_stripper().set_force_remove_keywords(keywords)
+
+def _ensure_automation_engine():
+    global automation_engine
+    if automation_engine is None:
+        automation_engine = AutomationEngine(db)
+    automation_engine.start()
+    return automation_engine
 
 def _get_folder_rule_for_path(file_path: str, rules: list[dict]) -> dict | None:
     """Pick the most specific folder rule that matches the file path."""
@@ -386,6 +445,15 @@ migrate_settings()
 initialize_clients()
 
 
+def _handle_shutdown(signum, frame):
+    stop_automation_engine()
+    raise SystemExit(0)
+
+
+atexit.register(stop_automation_engine)
+signal.signal(signal.SIGTERM, _handle_shutdown)
+
+
 # ============ SETTINGS ENDPOINTS ============
 
 @app.route('/api/settings', methods=['GET'])
@@ -411,6 +479,8 @@ def get_settings():
         settings["strip_keywords"] = True
     if "clean_subtitle_content" not in settings:
         settings["clean_subtitle_content"] = True
+    if "clean_subtitle_force_remove" not in settings:
+        settings["clean_subtitle_force_remove"] = ["YTS", "OpenSubtitles"]
     if "omdb_enabled" not in settings:
         settings["omdb_enabled"] = False
     if "tmdb_enabled" not in settings:
@@ -467,6 +537,11 @@ def update_settings():
             db.set_setting("strip_keywords", bool(data["strip_keywords"]))
         if "clean_subtitle_content" in data:
             db.set_setting("clean_subtitle_content", bool(data["clean_subtitle_content"]))
+        if "clean_subtitle_force_remove" in data:
+            db.set_setting(
+                "clean_subtitle_force_remove",
+                _normalize_keyword_list(data["clean_subtitle_force_remove"]),
+            )
         if "omdb_enabled" in data:
             db.set_setting("omdb_enabled", bool(data["omdb_enabled"]))
         if "tmdb_enabled" in data:
@@ -510,6 +585,160 @@ def update_settings():
         }), 500
 
 
+# ============ AUTOMATION ENDPOINTS ============
+
+@app.route('/api/automation/rules', methods=['GET'])
+def get_automation_rules():
+    try:
+        rules = db.get_automation_rules()
+        return jsonify({
+            "success": True,
+            "rules": rules
+        })
+    except Exception as e:
+        logger.error(f"Error fetching automation rules: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/automation/rules', methods=['POST'])
+def create_automation_rule():
+    try:
+        data = request.json or {}
+        name = (data.get("name") or "").strip()
+        schedule = (data.get("schedule") or "").strip()
+        patterns = data.get("patterns") or []
+        target_folders = data.get("target_folders") or []
+        enabled = bool(data.get("enabled", True))
+
+        if not name:
+            return jsonify({"success": False, "error": "Name is required"}), 400
+        if not schedule:
+            return jsonify({"success": False, "error": "Schedule is required"}), 400
+
+        try:
+            CronTrigger.from_crontab(schedule)
+        except ValueError:
+            return jsonify({"success": False, "error": "Invalid cron schedule"}), 400
+
+        rule_id = data.get("id") or str(uuid.uuid4())
+        saved = db.upsert_automation_rule({
+            "id": rule_id,
+            "name": name,
+            "schedule": schedule,
+            "enabled": enabled,
+            "patterns": patterns,
+            "target_folders": target_folders
+        })
+        if not saved:
+            return jsonify({"success": False, "error": "Failed to save rule"}), 500
+
+        engine = _ensure_automation_engine()
+        engine.reload_rules()
+
+        return jsonify({
+            "success": True,
+            "rule": db.get_automation_rule(rule_id)
+        })
+    except Exception as e:
+        logger.error(f"Error creating automation rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/automation/rules/<rule_id>', methods=['PUT'])
+def update_automation_rule(rule_id):
+    try:
+        existing = db.get_automation_rule(rule_id)
+        if not existing:
+            return jsonify({"success": False, "error": "Rule not found"}), 404
+
+        data = request.json or {}
+        name = (data.get("name") or existing["name"]).strip()
+        schedule = (data.get("schedule") or existing["schedule"]).strip()
+        patterns = data.get("patterns", existing["patterns"])
+        target_folders = data.get("target_folders", existing["target_folders"])
+        enabled = bool(data.get("enabled", existing["enabled"]))
+
+        if not name:
+            return jsonify({"success": False, "error": "Name is required"}), 400
+        if not schedule:
+            return jsonify({"success": False, "error": "Schedule is required"}), 400
+
+        try:
+            CronTrigger.from_crontab(schedule)
+        except ValueError:
+            return jsonify({"success": False, "error": "Invalid cron schedule"}), 400
+
+        saved = db.upsert_automation_rule({
+            "id": rule_id,
+            "name": name,
+            "schedule": schedule,
+            "enabled": enabled,
+            "patterns": patterns,
+            "target_folders": target_folders
+        })
+        if not saved:
+            return jsonify({"success": False, "error": "Failed to update rule"}), 500
+
+        engine = _ensure_automation_engine()
+        engine.reload_rules()
+
+        return jsonify({
+            "success": True,
+            "rule": db.get_automation_rule(rule_id)
+        })
+    except Exception as e:
+        logger.error(f"Error updating automation rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/automation/rules/<rule_id>', methods=['DELETE'])
+def delete_automation_rule(rule_id):
+    try:
+        deleted = db.delete_automation_rule(rule_id)
+        if not deleted:
+            return jsonify({"success": False, "error": "Rule not found"}), 404
+
+        engine = _ensure_automation_engine()
+        engine.reload_rules()
+
+        return jsonify({
+            "success": True
+        })
+    except Exception as e:
+        logger.error(f"Error deleting automation rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/automation/rules/<rule_id>/run', methods=['POST'])
+def run_automation_rule(rule_id):
+    try:
+        data = request.json or {}
+        dry_run = bool(data.get("dry_run", False))
+        engine = _ensure_automation_engine()
+        result = engine.run_rule_now(rule_id, dry_run=dry_run)
+        if not result.get("success"):
+            return jsonify(result), 404
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error running automation rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 # ============ SCAN ENDPOINTS ============
 
 @app.route('/api/scan/start', methods=['POST'])
@@ -535,7 +764,11 @@ def start_scan():
 
         # Perform scan - collect batches into a flat list
         files = []
-        for batch in FileScanner.scan_directory(directory, batch_size=10):
+        for batch in FileScanner.scan_directory(
+            directory,
+            batch_size=10,
+            detect_cleanup_keywords=True,
+        ):
             files.extend(batch)
 
         # Calculate scan duration
@@ -631,7 +864,11 @@ def stream_scan():
                 batch_count = 0
 
                 # Stream batches as they're found
-                for batch in FileScanner.scan_directory(directory, batch_size=10):
+                for batch in FileScanner.scan_directory(
+                    directory,
+                    batch_size=10,
+                    detect_cleanup_keywords=True,
+                ):
                     if client_closed.is_set():
                         logger.info("Client disconnected, stopping scan loop")
                         scan_state["scanning"] = False
@@ -1306,6 +1543,7 @@ def process_files():
         duration = data.get("duration", db.get_setting("duration", 40))
         title_override = data.get("titleOverride", None)  # Optional title override
         force_reprocess = data.get("forceReprocess", False)  # Optional force flag
+        clean_only = bool(data.get("clean_only", False))
 
         if not file_paths:
             return jsonify({
@@ -1313,11 +1551,21 @@ def process_files():
                 "error": "No files specified"
             }), 400
 
-        if not processor:
+        if not processor and not clean_only:
             return jsonify({
                 "success": False,
                 "error": "Metadata provider not configured"
             }), 400
+
+        processor_instance = processor
+        if clean_only and processor_instance is None:
+            processor_instance = SubtitleProcessor(
+                omdb_client,
+                tmdb_client,
+                tvmaze_client,
+                wikipedia_client,
+                preferred_source=_get_str_setting("preferred_source", "omdb"),
+            )
 
         # Load default format options from settings
         format_options = get_format_options_from_settings()
@@ -1351,18 +1599,25 @@ def process_files():
                 preferred_source = rule.get("preferred_source") if rule else None
                 language = rule.get("language") if rule else None
 
-                result = asyncio.run(processor.process_file(
-                    file_path,
-                    duration,
-                    force_reprocess=force_reprocess,
-                    title_override=title_override,
-                    format_options=effective_format,
-                    strip_keywords=strip_keywords,
-                    clean_subtitle_content=clean_subtitle_content,
-                    insertion_position=insertion_position or default_insertion_position,
-                    preferred_source=preferred_source or default_preferred_source,
-                    language=language,
-                ))
+                if clean_only:
+                    result = processor_instance.clean_file(
+                        file_path,
+                        clean_subtitle_content=clean_subtitle_content,
+                    )
+                    result["clean_only"] = True
+                else:
+                    result = asyncio.run(processor_instance.process_file(
+                        file_path,
+                        duration,
+                        force_reprocess=force_reprocess,
+                        title_override=title_override,
+                        format_options=effective_format,
+                        strip_keywords=strip_keywords,
+                        clean_subtitle_content=clean_subtitle_content,
+                        insertion_position=insertion_position or default_insertion_position,
+                        preferred_source=preferred_source or default_preferred_source,
+                        language=language,
+                    ))
 
                 # Track success/failure
                 if result["success"]:
@@ -1386,7 +1641,9 @@ def process_files():
                     "success": result["success"],
                     "status": result.get("status", "Unknown"),
                     "summary": result.get("summary", ""),
-                    "error": result.get("error")
+                    "error": result.get("error"),
+                    "clean_only": result.get("clean_only", False),
+                    "clean_keywords": result.get("clean_keywords", []),
                 })
 
                 # Update scan state
@@ -1394,7 +1651,10 @@ def process_files():
                     if file_info["path"] == file_path:
                         file_info["status"] = result.get("status", "Unknown")
                         file_info["summary"] = result.get("summary", "") if isinstance(result.get("summary"), str) else ""
-                        file_info["has_plot"] = result["success"]
+                        if not result.get("clean_only"):
+                            file_info["has_plot"] = result["success"]
+                        else:
+                            file_info["clean_keywords"] = result.get("clean_keywords", [])
                         break
 
             except Exception as e:
@@ -1417,7 +1677,9 @@ def process_files():
                     "success": False,
                     "status": "Error",
                     "summary": "",
-                    "error": str(e)
+                    "error": str(e),
+                    "clean_only": clean_only,
+                    "clean_keywords": [],
                 })
 
         # Complete the run in database
@@ -1795,4 +2057,11 @@ if __name__ == '__main__':
     logger.info("Starting Sublogue API server on http://localhost:5000")
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
         start_scheduled_scan_worker()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        start_automation_engine_async()
+    os.environ.pop("FLASK_RUN_FROM_CLI", None)
+    try:
+        logger.info("Launching Flask app on 0.0.0.0:5000")
+        app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
+    except Exception as e:
+        logger.exception("Flask server failed to start: %s", e)
+        raise

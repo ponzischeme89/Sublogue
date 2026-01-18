@@ -10,6 +10,7 @@
     Settings,
     History,
     Library,
+    Zap,
   } from "lucide-svelte";
   import ThemeSelector from "./ThemeSelector.svelte";
   import sublogueLogo from "../assets/sublogue_v2.png";
@@ -94,6 +95,24 @@
         className={`w-full rounded-md py-1.5 text-[13px] font-semibold leading-none ${
           collapsed ? "justify-center px-0" : "justify-start px-2 gap-2"
         } ${
+          currentView === "automation"
+            ? "bg-[color:var(--bg-hover)] text-white font-bold"
+            : "text-text-secondary hover:text-white hover:bg-[color:var(--bg-hover)]"
+        }`}
+        on:click={() => onNavigate("automation")}
+        aria-current={currentView === "automation" ? "page" : undefined}
+      >
+        <Zap class="h-4 w-4" />
+        {#if !collapsed}
+          Automations
+        {/if}
+      </Button>
+
+      <Button
+        variant="ghost"
+        className={`w-full rounded-md py-1.5 text-[13px] font-semibold leading-none ${
+          collapsed ? "justify-center px-0" : "justify-start px-2 gap-2"
+        } ${
           currentView === "history"
             ? "bg-[color:var(--bg-hover)] text-white font-bold"
             : "text-text-secondary hover:text-white hover:bg-[color:var(--bg-hover)]"
@@ -150,28 +169,32 @@
         <ThemeSelector className="w-full" />
       {/if}
       <div
-        class={`flex items-center rounded-md bg-white/5 px-3 py-2 text-xs ${collapsed ? "justify-center" : "justify-between"}`}
+        class={`flex items-center px-3 py-2 text-xs ${collapsed ? "justify-center" : "justify-between"}`}
       >
         {#if !collapsed}
-          <Badge className="bg-white/10 text-text-secondary"
-            >v1.0.10 Release Candiate</Badge
-          >
+          <Badge className="text-text-secondary">Version: v1.1.0</Badge>
         {:else}
-          <Badge className="bg-white/10 text-text-secondary">v</Badge>
+          <Badge className="text-text-secondary">v</Badge>
         {/if}
       </div>
-
-      <a
-        href="https://github.com/ponzischeme89/Sublogue"
-        target="_blank"
-        rel="noopener noreferrer"
-        class={`inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-xs text-text-tertiary hover:text-white hover:bg-[color:var(--bg-hover)] transition-colors ${collapsed ? "justify-center" : "gap-2"}`}
+      <div
+        class={`flex items-center px-3 py-2 text-xs ${collapsed ? "justify-center" : "justify-between"}`}
       >
-        <Github class="h-4 w-4" />
         {#if !collapsed}
-          Star on GitHub
+          <span class="text-text-tertiary">&copy; 2026 ponzischeme89</span>
+          <a
+            href="https://github.com/ponzischeme89/Sublogue"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center text-text-tertiary hover:text-white transition-colors"
+            aria-label="GitHub"
+          >
+            <Github class="h-4 w-4" />
+          </a>
+        {:else}
+          <span class="text-text-tertiary">&copy;</span>
         {/if}
-      </a>
+      </div>
     </div>
   </div>
 </aside>

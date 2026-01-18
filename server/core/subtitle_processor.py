@@ -1373,6 +1373,8 @@ class SubtitleProcessor:
                 # ─────────────────────────────────────────────────────────────
                 original = file_path.read_text(encoding="utf-8", errors="ignore")
                 subs = parse_srt(original)
+                stripper = get_stripper()
+                detected_keywords = stripper.detect_subtitle_watermarks(original)
 
                 if not subs:
                     return self._fail("No valid subtitle blocks found")
@@ -1534,6 +1536,116 @@ class SubtitleProcessor:
                     "rotten_tomatoes": movie.get("rotten_tomatoes") or movie.get("rottenTomatoes"),
                     "runtime": movie.get("runtime"),
                     "media_type": movie.get("media_type")
+                }
+
+        except FileLockError as e:
+            logger.error(f"Could not acquire lock for {file_path.name}: {e}")
+            return self._fail(f"File is being processed by another task: {e}")
+
+    def clean_file(
+        self,
+        file_path: str | Path,
+        clean_subtitle_content: bool = True,
+    ) -> dict:
+        """Clean ad/watermark content from a subtitle file without inserting plots."""
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            return self._fail("File not found")
+
+        if file_path.stat().st_size > self.MAX_SRT_BYTES:
+            return self._fail("Subtitle file too large")
+
+        try:
+            with file_lock(file_path, timeout=30.0):
+                original = file_path.read_text(encoding="utf-8", errors="ignore")
+                subs = parse_srt(original)
+
+                if not subs:
+                    return self._fail("No valid subtitle blocks found")
+
+                original_blocks = subs
+                removed_count = 0
+                modified_count = 0
+
+                if clean_subtitle_content:
+                    cleaned_blocks: List[SubtitleBlock] = []
+
+                    for block in original_blocks:
+                        text = block.text
+                        if stripper.should_remove_subtitle_block(text):
+                            removed_count += 1
+                            continue
+
+                        cleaned_text = stripper.clean_subtitle_text(text)
+                        if not cleaned_text.strip():
+                            removed_count += 1
+                            continue
+
+                        if cleaned_text != text:
+                            modified_count += 1
+
+                        cleaned_blocks.append(
+                            SubtitleBlock(
+                                block.index,
+                                block.start_time,
+                                block.end_time,
+                                cleaned_text,
+                            )
+                        )
+                else:
+                    cleaned_blocks = list(original_blocks)
+
+                sanitized = sanitize_all_blocks(cleaned_blocks)
+                if len(sanitized) < len(cleaned_blocks):
+                    removed_count += len(cleaned_blocks) - len(sanitized)
+
+                if not sanitized:
+                    return self._fail("No dialogue subtitles found after cleaning")
+
+                renumbered = [
+                    SubtitleBlock(i + 1, b.start_time, b.end_time, b.text)
+                    for i, b in enumerate(sanitized)
+                ]
+
+                changed = len(renumbered) != len(original_blocks)
+                if not changed:
+                    for updated, original_block in zip(renumbered, original_blocks):
+                        if (
+                            updated.start_time != original_block.start_time
+                            or updated.end_time != original_block.end_time
+                            or updated.text != original_block.text
+                        ):
+                            changed = True
+                            break
+
+                if not changed:
+                    return {
+                        "success": True,
+                        "status": "Skipped",
+                        "summary": "No changes needed",
+                        "removed_blocks": 0,
+                        "modified_blocks": 0,
+                        "clean_keywords": detected_keywords,
+                    }
+
+                tmp = file_path.with_suffix(".srt.tmp")
+                tmp.write_text(format_srt(renumbered), encoding="utf-8")
+                tmp.replace(file_path)
+
+                summary = (
+                    f"Removed {removed_count} ad blocks, modified {modified_count} blocks"
+                    if clean_subtitle_content
+                    else "Cleaned subtitle content"
+                )
+
+                return {
+                    "success": True,
+                    "status": "Cleaned",
+                    "summary": summary,
+                    "removed_blocks": removed_count,
+                    "modified_blocks": modified_count,
+                    "clean_keywords": detected_keywords,
                 }
 
         except FileLockError as e:

@@ -199,6 +199,39 @@ class KeywordStripper:
         r"sign\s+up\s+(now|today|free)",
     ]
 
+    # Force-remove entire subtitle blocks if these appear anywhere in a line.
+    # Partial matches are intentional (e.g. "OpenSubtitles.org").
+    SUBTITLE_FORCE_REMOVE = [
+        r"yts",
+        r"opensubtitles?",
+    ]
+
+    _custom_force_remove_keywords: List[str] = []
+
+    # Labels used for reporting detected watermark keywords in clean-only scans
+    SUBTITLE_WATERMARK_LABELS = [
+        (r"yts\.mx|yts\.am|yts\.lt|yts\.ag|\byts\b", "YTS"),
+        (r"\byify\b", "YIFY"),
+        (r"\brarbg\b", "RARBG"),
+        (r"\beztv\b", "EZTV"),
+        (r"\bettv\b", "ETTV"),
+        (r"torrentgalaxy|\btgx\b", "TorrentGalaxy"),
+        (r"1337x", "1337x"),
+        (r"limetorrents?", "LimeTorrents"),
+        (r"\bevo\b", "EVO"),
+        (r"\bpsa\b", "PSA"),
+        (r"\bfgt\b", "FGT"),
+        (r"opensubtitles?", "OpenSubtitles"),
+        (r"sub\.?scene|subscene", "Subscene"),
+        (r"addic7ed", "Addic7ed"),
+        (r"podnapisi", "Podnapisi"),
+        (r"yifysubtitles?", "YIFY Subtitles"),
+        (r"legendas\.?tv", "LegendasTV"),
+        (r"shooter\.?cn", "ShooterCN"),
+        (r"subhd", "SubHD"),
+        (r"www\.[a-z0-9\-]+\.(com|org|net|io|tv|mx|am|lt|ag)|https?://", "URL"),
+    ]
+
     # Patterns that indicate an ENTIRE subtitle block should be removed
     # (not just the matching text, but the whole block)
     SUBTITLE_BLOCK_REMOVERS = [
@@ -234,6 +267,11 @@ class KeywordStripper:
         def c(p):
             return re.compile(p, re.IGNORECASE | re.VERBOSE)
 
+        custom_force_remove = [
+            re.escape(k) for k in cls._custom_force_remove_keywords if k
+        ]
+        combined_force_remove = cls.SUBTITLE_FORCE_REMOVE + custom_force_remove
+
         cls._compiled = {
             "junk": c("|".join([
                 cls.QUALITY,
@@ -254,6 +292,9 @@ class KeywordStripper:
             ],
             "subtitle_block_removers": [
                 re.compile(p, re.IGNORECASE | re.MULTILINE) for p in cls.SUBTITLE_BLOCK_REMOVERS
+            ],
+            "subtitle_force_remove": [
+                re.compile(p, re.IGNORECASE) for p in combined_force_remove
             ],
         }
 
@@ -347,6 +388,11 @@ class KeywordStripper:
             line = line.strip()
             if not line:
                 continue
+
+            # Hard kill-switch: if a line mentions these sources, drop the whole block.
+            for pattern in rx["subtitle_force_remove"]:
+                if pattern.search(line):
+                    return True
 
             # Check if this line matches any block remover pattern
             is_ad_line = False
@@ -468,6 +514,24 @@ class KeywordStripper:
             )
 
         return cleaned
+
+    def detect_subtitle_watermarks(self, text: str) -> List[str]:
+        """Detect known subtitle watermark keywords in raw subtitle text."""
+        detected = []
+        for pattern, label in self.SUBTITLE_WATERMARK_LABELS:
+            if re.search(pattern, text, re.IGNORECASE):
+                detected.append(label)
+        for keyword in self._custom_force_remove_keywords:
+            if keyword and re.search(re.escape(keyword), text, re.IGNORECASE):
+                detected.append(keyword)
+        return detected
+
+    def set_force_remove_keywords(self, keywords: List[str]) -> None:
+        """Set custom force-remove keywords and refresh regex cache."""
+        type(self)._custom_force_remove_keywords = [
+            k.strip() for k in (keywords or []) if k and k.strip()
+        ]
+        type(self)._compiled = None
 
 
 # -----------------------------

@@ -9,7 +9,7 @@ function createToastStore() {
     update((items) => items.filter((item) => item.id !== id))
   }
 
-  function addToast({ message, tone = 'info', duration = 3200 } = {}) {
+  function addToast({ message, tone = 'info', duration = 5200 } = {}) {
     if (!message) return
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
     const toast = { id, message, tone }

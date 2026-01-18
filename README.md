@@ -13,9 +13,10 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 ## Features
 - Insert plot summaries into existing .srt files without shifting timings
 - Fetch metadata (plot, runtime, director, cast, IMDb/RT ratings) using OMDb, TMDb, TVMaze and Wikipedia - add these integrations under Settings before scanning
-- Preserve original dialogue and timing with safe insertion logic
+- Preserve original dialogue and timing with safe insertion logic while cleaning watermarks (YTS, OpenSubtitles, etc.)
+- Automation rules can run cleanup-only mode on schedules, or combined cleanup + metadata enrichment
 - Folder Rules to have seperate logic for different folders (for example TV shows could have runtime but not actors, etc)
-- Clean, fast web UI for scanning and batch processing built with Svelte + Python/Flask
+- Clean, fast web UI for scanning and batch processing built with Svelte (frontend) + Python/Flask (server)
 - Three themes included: OLED, Ocean, and Dracula White
 
 ## Screenshots
@@ -27,7 +28,8 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 </div>
 
 ## Getting started
-To get started installing Sublogue, expand on your posion below. Personally, I recommend Komodo. It's great. 
+To get started installing Sublogue, expand on your posion below. Personally, I recommend **Komodo**. It's great.
+
 <details>
 <summary>⚓ Docker Compose</summary>
 Create `data/` and `media/` folders next to the compose file, then run:

@@ -7,6 +7,9 @@
 
   let stripKeywords = settings.strip_keywords !== false;
   let cleanSubtitleContent = settings.clean_subtitle_content !== false;
+  let forceRemoveKeywords = Array.isArray(settings.clean_subtitle_force_remove)
+    ? settings.clean_subtitle_force_remove.join(", ")
+    : settings.clean_subtitle_force_remove || "YTS, OpenSubtitles";
 
   // Example filenames to demonstrate the cleaning
   const filenameExamples = [
@@ -53,6 +56,10 @@
     onSave({
       strip_keywords: stripKeywords,
       clean_subtitle_content: cleanSubtitleContent,
+      clean_subtitle_force_remove: forceRemoveKeywords
+        .split(/[\n,]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean),
     });
   }
 </script>
@@ -165,6 +172,22 @@
     <!-- Collapsible Details -->
     {#if cleanSubtitleContent}
       <div class="space-y-4 pl-2 border-l-2 border-border ml-2">
+        <div class="bg-bg-card border border-border rounded-xl p-4 space-y-3">
+          <div class="text-[11px] text-text-tertiary uppercase tracking-wide">
+            Force Remove Keywords
+          </div>
+          <textarea
+            rows="3"
+            bind:value={forceRemoveKeywords}
+            class="w-full resize-none rounded-lg border border-white/10 bg-bg-primary/60 px-3 py-2 text-[12px] text-text-secondary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
+            placeholder="YTS, OpenSubtitles"
+          ></textarea>
+          <p class="text-[11px] text-text-tertiary">
+            Any subtitle block containing one of these strings (partial match)
+            is removed entirely. Separate values with commas or new lines.
+          </p>
+        </div>
+
         <!-- Example Transformations -->
         <div class="bg-bg-card border border-border rounded-xl overflow-hidden">
           <div class="px-4 py-2.5 border-b border-border bg-bg-secondary">

@@ -8,6 +8,7 @@
   import ScanPanel from "./components/scan/ScanPanel.svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import LibraryPanel from "./components/library/LibraryPanel.svelte";
+  import AutomationList from "./routes/automation/AutomationList.svelte";
   import { Menu } from "lucide-svelte";
   import ToastHost from "./components/ToastHost.svelte";
   import { healthCheck } from "./lib/api.js";
@@ -15,6 +16,8 @@
 
   let currentView = "scanner";
   let apiConfigured = false;
+  let apiReachable = true;
+  let apiErrorMessage = "";
   let selectedFiles = [];
   let metadataProvider = "omdb";
   let scanPanelKey = 0;
@@ -59,8 +62,12 @@
     try {
       const health = await healthCheck();
       apiConfigured = health.api_key_configured;
+      apiReachable = true;
+      apiErrorMessage = "";
     } catch (err) {
       console.error("Health check failed:", err);
+      apiReachable = false;
+      apiErrorMessage = "Backend unreachable. Start the server to use Sublogue.";
     }
     return () => {
       window.removeEventListener("resize", onResize);
@@ -76,8 +83,12 @@
     try {
       const health = await healthCheck();
       apiConfigured = health.api_key_configured;
+      apiReachable = true;
+      apiErrorMessage = "";
     } catch (err) {
       console.error("Health check failed:", err);
+      apiReachable = false;
+      apiErrorMessage = "Backend unreachable. Start the server to use Sublogue.";
     }
   }
 
@@ -143,11 +154,18 @@
           </Button>
         </div>
       {/if}
-      {#if !apiConfigured && currentView === "scanner"}
+      {#if !apiReachable}
+        <div class="border-b border-red-500/20 bg-red-500/10">
+          <div class="px-6 md:px-8 py-3">
+            <p class="text-[13px] text-red-200">{apiErrorMessage}</p>
+          </div>
+        </div>
+      {:else if !apiConfigured && currentView === "scanner"}
         <div class="border-b border-yellow-500/10 bg-yellow-500/5">
           <div class="px-6 md:px-8 py-3">
-            <p class="text-[13px] text-yellow-100">
-              Configure a metadata source in Settings to get started
+            <p class="text-[14px] text-red-100">
+              Configure a metadata source in Settings > Integrations to get
+              started
             </p>
           </div>
         </div>
@@ -170,6 +188,8 @@
           {/key}
         {:else if currentView === "library"}
           <LibraryPanel />
+        {:else if currentView === "automation"}
+          <AutomationList />
         {/if}
       </div>
     </main>

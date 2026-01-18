@@ -5,7 +5,7 @@
 
   const toneStyles = {
     info: 'border-white/10 bg-bg-card text-text-primary',
-    success: 'border-green-500/30 bg-green-500/10 text-green-100',
+    success: 'border-emerald-500/50 bg-emerald-900/60 text-emerald-50',
     error: 'border-red-500/30 bg-red-500/10 text-red-100'
   }
 </script>

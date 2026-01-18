@@ -268,10 +268,16 @@ export async function searchTitle(query, mode = "quick", options = {}) {
 
 /**
  * POST /api/process - Process files to add plot summaries
- * Body: { files: [string], duration: number, titleOverride?: object, forceReprocess?: boolean }
+ * Body: { files: [string], duration: number, titleOverride?: object, forceReprocess?: boolean, clean_only?: boolean }
  * Returns: { success, results: [{file, success, status, summary, error?}] }
  */
-export async function processFiles(files, duration, titleOverride = null, forceReprocess = false) {
+export async function processFiles(
+  files,
+  duration,
+  titleOverride = null,
+  forceReprocess = false,
+  cleanOnly = false
+) {
   const body = { files, duration }
 
   if (titleOverride) {
@@ -280,6 +286,10 @@ export async function processFiles(files, duration, titleOverride = null, forceR
 
   if (forceReprocess) {
     body.forceReprocess = forceReprocess
+  }
+
+  if (cleanOnly) {
+    body.clean_only = true
   }
 
   return apiFetch('/process', {
@@ -390,6 +400,55 @@ export async function cancelScheduledScan(scanId) {
  */
 export async function getIntegrationUsage() {
   return apiFetch('/integrations/usage')
+}
+
+// ============ AUTOMATION API ============
+
+/**
+ * GET /api/automation/rules - Get automation rules
+ * Returns: { success, rules: [...] }
+ */
+export async function getAutomationRules() {
+  return apiFetch('/automation/rules')
+}
+
+/**
+ * POST /api/automation/rules - Create automation rule
+ */
+export async function createAutomationRule(rule) {
+  return apiFetch('/automation/rules', {
+    method: 'POST',
+    body: JSON.stringify(rule)
+  })
+}
+
+/**
+ * PUT /api/automation/rules/<id> - Update automation rule
+ */
+export async function updateAutomationRule(ruleId, updates) {
+  return apiFetch(`/automation/rules/${ruleId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  })
+}
+
+/**
+ * DELETE /api/automation/rules/<id> - Delete automation rule
+ */
+export async function deleteAutomationRule(ruleId) {
+  return apiFetch(`/automation/rules/${ruleId}`, {
+    method: 'DELETE'
+  })
+}
+
+/**
+ * POST /api/automation/rules/<id>/run - Run rule now
+ */
+export async function runAutomationRule(ruleId, dryRun = false) {
+  return apiFetch(`/automation/rules/${ruleId}/run`, {
+    method: 'POST',
+    body: JSON.stringify({ dry_run: dryRun })
+  })
 }
 
 // ============ SUGGESTED MATCHES API ============
