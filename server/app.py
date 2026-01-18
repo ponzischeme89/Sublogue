@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import os
 import threading
 import time
@@ -20,13 +19,11 @@ from core.subtitle_processor import SubtitleProcessor, SubtitleFormatOptions, SU
 from core.keyword_stripper import get_stripper
 from core.file_scanner import FileScanner
 from core.database import DatabaseManager
+from logging_utils import configure_logging, get_logger
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+configure_logging()
+logger = get_logger(__name__)
 
 # Initialize Flask app with static folder for production
 static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
@@ -592,6 +589,8 @@ def stream_scan():
                 "error": "No directory specified"
             }), 400
 
+        client_closed = threading.Event()
+
         def generate():
             """Generator function that yields SSE-formatted progress updates"""
             try:
@@ -616,6 +615,10 @@ def stream_scan():
 
                 # Stream batches as they're found
                 for batch in FileScanner.scan_directory(directory, batch_size=10):
+                    if client_closed.is_set():
+                        logger.info("Client disconnected, stopping scan loop")
+                        scan_state["scanning"] = False
+                        return
                     # Check if client is still connected before processing
                     try:
                         batch_count += 1
@@ -700,7 +703,7 @@ def stream_scan():
                 }
                 yield f"data: {json.dumps(error_data)}\n\n"
 
-        return Response(
+        response = Response(
             stream_with_context(generate()),
             mimetype='text/event-stream',
             headers={
@@ -709,6 +712,8 @@ def stream_scan():
                 'Connection': 'keep-alive'
             }
         )
+        response.call_on_close(client_closed.set)
+        return response
 
     except Exception as e:
         logger.error(f"Stream scan setup error: {e}")
@@ -1640,7 +1645,8 @@ def get_library_report():
     """Get library health report with scan files and issue summaries"""
     try:
         limit = request.args.get('limit', 200, type=int)
-        latest_files = db.get_latest_scan_files()
+        offset = request.args.get('offset', 0, type=int)
+        latest_files = db.get_latest_scan_files(limit=limit, offset=offset)
         latest_results = db.get_latest_file_results()
 
         return jsonify({

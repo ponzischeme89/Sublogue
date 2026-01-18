@@ -3,9 +3,10 @@ Configuration manager - handles settings persistence
 """
 import json
 import logging
+from logging_utils import get_logger
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 
 class ConfigManager:
@@ -35,18 +36,18 @@ class ConfigManager:
             try:
                 with open(self.file_path, "r") as f:
                     self.settings.update(json.load(f))
-                logging.info("Settings loaded successfully")
+                logger.info("Settings loaded successfully")
             except Exception as e:
-                logging.error(f"Error loading settings: {e}")
+                logger.error(f"Error loading settings: {e}")
 
     def save_settings(self):
         """Save settings to disk"""
         try:
             with open(self.file_path, "w") as f:
                 json.dump(self.settings, f, indent=2)
-            logging.info("Settings saved successfully")
+            logger.info("Settings saved successfully")
         except Exception as e:
-            logging.error(f"Error saving settings: {e}")
+            logger.error(f"Error saving settings: {e}")
 
     def get(self, key, default=None):
         """Get a setting value"""
@@ -55,7 +56,7 @@ class ConfigManager:
     def set(self, key, value):
         """Set a setting value"""
         self.settings[key] = value
-        logging.info(f"Setting updated: {key}")
+        logger.info(f"Setting updated: {key}")
 
     def get_all(self):
         """Get all settings"""
@@ -64,4 +65,4 @@ class ConfigManager:
     def update_multiple(self, updates):
         """Update multiple settings at once"""
         self.settings.update(updates)
-        logging.info(f"Updated {len(updates)} settings")
+        logger.info(f"Updated {len(updates)} settings")

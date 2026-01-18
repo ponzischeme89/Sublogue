@@ -3,10 +3,11 @@ TVmaze API client - async TV metadata fetching
 """
 import aiohttp
 import logging
+from logging_utils import get_logger
 import re
 import time
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TVMazeClient:

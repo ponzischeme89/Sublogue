@@ -3,10 +3,10 @@ TMDb API client - async movie and TV series metadata fetching
 """
 import asyncio
 import aiohttp
-import logging
+from logging_utils import get_logger
 import time
 
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 
 class TMDbClient:
@@ -47,7 +47,7 @@ class TMDbClient:
                         response_time_ms = int((time.time() - start_time) * 1000)
 
                         if response.status != 200:
-                            logging.error(f"TMDb HTTP error {response.status} for movie '{title}'")
+                            logger.error(f"TMDb HTTP error {response.status} for movie '{title}'")
                             # Track failed API call
                             if self.db_manager:
                                 self.db_manager.track_api_call(
@@ -71,7 +71,7 @@ class TMDbClient:
                                 )
                             return data["results"][0]  # Return first match
 
-                        logging.warning(f"No TMDb results for movie '{title}'")
+                        logger.warning(f"No TMDb results for movie '{title}'")
                         # Track failed API call (no results)
                         if self.db_manager:
                             self.db_manager.track_api_call(
@@ -83,7 +83,7 @@ class TMDbClient:
                         return None
 
             except Exception as e:
-                logging.error(f"Error searching TMDb for movie '{title}': {e}")
+                logger.error(f"Error searching TMDb for movie '{title}': {e}")
                 return None
 
     async def search_tv(self, title, year=None, language=None):
@@ -115,7 +115,7 @@ class TMDbClient:
                         response_time_ms = int((time.time() - start_time) * 1000)
 
                         if response.status != 200:
-                            logging.error(f"TMDb HTTP error {response.status} for TV '{title}'")
+                            logger.error(f"TMDb HTTP error {response.status} for TV '{title}'")
                             # Track failed API call
                             if self.db_manager:
                                 self.db_manager.track_api_call(
@@ -139,7 +139,7 @@ class TMDbClient:
                                 )
                             return data["results"][0]  # Return first match
 
-                        logging.warning(f"No TMDb results for TV series '{title}'")
+                        logger.warning(f"No TMDb results for TV series '{title}'")
                         # Track failed API call (no results)
                         if self.db_manager:
                             self.db_manager.track_api_call(
@@ -151,7 +151,7 @@ class TMDbClient:
                         return None
 
             except Exception as e:
-                logging.error(f"Error searching TMDb for TV '{title}': {e}")
+                logger.error(f"Error searching TMDb for TV '{title}': {e}")
                 return None
 
     async def get_movie_details(self, movie_id, language=None):
@@ -174,13 +174,13 @@ class TMDbClient:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, params=params) as response:
                         if response.status != 200:
-                            logging.error(f"TMDb HTTP error {response.status} for movie ID {movie_id}")
+                            logger.error(f"TMDb HTTP error {response.status} for movie ID {movie_id}")
                             return None
 
                         return await response.json()
 
             except Exception as e:
-                logging.error(f"Error getting TMDb movie details for ID {movie_id}: {e}")
+                logger.error(f"Error getting TMDb movie details for ID {movie_id}: {e}")
                 return None
 
     async def get_tv_details(self, tv_id, language=None):
@@ -203,13 +203,13 @@ class TMDbClient:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, params=params) as response:
                         if response.status != 200:
-                            logging.error(f"TMDb HTTP error {response.status} for TV ID {tv_id}")
+                            logger.error(f"TMDb HTTP error {response.status} for TV ID {tv_id}")
                             return None
 
                         return await response.json()
 
             except Exception as e:
-                logging.error(f"Error getting TMDb TV details for ID {tv_id}: {e}")
+                logger.error(f"Error getting TMDb TV details for ID {tv_id}: {e}")
                 return None
 
     async def get_tv_season(self, tv_id, season_number, language=None):
@@ -233,13 +233,13 @@ class TMDbClient:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, params=params) as response:
                         if response.status != 200:
-                            logging.error(f"TMDb HTTP error {response.status} for TV {tv_id} season {season_number}")
+                            logger.error(f"TMDb HTTP error {response.status} for TV {tv_id} season {season_number}")
                             return None
 
                         return await response.json()
 
             except Exception as e:
-                logging.error(f"Error getting TMDb season data: {e}")
+                logger.error(f"Error getting TMDb season data: {e}")
                 return None
 
     async def fetch_summary(self, title, media_type="movie", year=None, season=None, episode=None, language=None):
@@ -256,7 +256,7 @@ class TMDbClient:
         Returns:
             dict: {plot, title, year, media_type, rating} or None if not found
         """
-        logging.info(f"Fetching TMDb summary for: {title} (type: {media_type})")
+        logger.info(f"Fetching TMDb summary for: {title} (type: {media_type})")
 
         try:
             if media_type == "tv":
@@ -327,5 +327,5 @@ class TMDbClient:
                 }
 
         except Exception as e:
-            logging.error(f"Error fetching TMDb summary for '{title}': {e}")
+            logger.error(f"Error fetching TMDb summary for '{title}': {e}")
             return None

@@ -12,11 +12,11 @@ from __future__ import annotations
 import asyncio
 import aiohttp
 import logging
+from logging_utils import get_logger
 import time
 from typing import Dict, Optional
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RateLimiter:

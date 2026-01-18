@@ -1,114 +1,116 @@
 <script>
-  import { onMount } from 'svelte'
-  import Footer from './components/Footer.svelte'
-  import AppSidebar from './components/AppSidebar.svelte'
-  import * as Sidebar from './lib/components/ui/sidebar'
-  import { Button } from './lib/components/ui/button'
-  import SettingsPanel from './components/SettingsPanel.svelte'
-  import ScanPanel from './components/ScanPanel.svelte'
-  import HistoryPanel from './components/HistoryPanel.svelte'
-  import LibraryPanel from './components/LibraryPanel.svelte'
-  import { Menu } from 'lucide-svelte'
-  import ToastHost from './components/ToastHost.svelte'
-  import { healthCheck } from './lib/api.js'
-  import { currentTheme, themes } from './lib/themeStore.js'
+  import { onMount } from "svelte";
+  import Footer from "./components/Footer.svelte";
+  import AppSidebar from "./components/AppSidebar.svelte";
+  import * as Sidebar from "./lib/components/ui/sidebar";
+  import { Button } from "./lib/components/ui/button";
+  import SettingsPanel from "./components/SettingsPanel.svelte";
+  import ScanPanel from "./components/ScanPanel.svelte";
+  import HistoryPanel from "./components/HistoryPanel.svelte";
+  import LibraryPanel from "./components/LibraryPanel.svelte";
+  import { Menu } from "lucide-svelte";
+  import ToastHost from "./components/ToastHost.svelte";
+  import { healthCheck } from "./lib/api.js";
+  import { currentTheme, themes } from "./lib/themeStore.js";
 
-  let currentView = 'scanner'
-  let apiConfigured = false
-  let selectedFiles = []
-  let metadataProvider = 'omdb'
-  let scanPanelKey = 0
-  let sidebarOpen = true
-  let sidebarCollapsed = false
-  let isMobile = false
+  let currentView = "scanner";
+  let apiConfigured = false;
+  let selectedFiles = [];
+  let metadataProvider = "omdb";
+  let scanPanelKey = 0;
+  let sidebarOpen = true;
+  let sidebarCollapsed = false;
+  let isMobile = false;
 
   // Apply theme on mount and when it changes
   function applyTheme(themeName) {
-    const theme = themes[themeName]
-    if (!theme) return
+    const theme = themes[themeName];
+    if (!theme) return;
 
-    const root = document.documentElement
+    const root = document.documentElement;
     Object.entries(theme.colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value)
-    })
+      root.style.setProperty(`--${key}`, value);
+    });
 
-    if (themeName === 'light') {
-      root.classList.add('light-theme')
+    if (themeName === "light") {
+      root.classList.add("light-theme");
     } else {
-      root.classList.remove('light-theme')
+      root.classList.remove("light-theme");
     }
   }
 
   function updateLayout() {
-    isMobile = window.innerWidth < 768
+    isMobile = window.innerWidth < 768;
     if (isMobile) {
-      sidebarOpen = false
+      sidebarOpen = false;
     } else {
-      sidebarOpen = true
+      sidebarOpen = true;
     }
   }
 
   onMount(async () => {
-    updateLayout()
-    const onResize = () => updateLayout()
-    window.addEventListener('resize', onResize)
+    updateLayout();
+    const onResize = () => updateLayout();
+    window.addEventListener("resize", onResize);
 
     // Initialize theme
-    applyTheme($currentTheme)
+    applyTheme($currentTheme);
 
     try {
-      const health = await healthCheck()
-      apiConfigured = health.api_key_configured
+      const health = await healthCheck();
+      apiConfigured = health.api_key_configured;
     } catch (err) {
-      console.error('Health check failed:', err)
+      console.error("Health check failed:", err);
     }
     return () => {
-      window.removeEventListener('resize', onResize)
-    }
-  })
+      window.removeEventListener("resize", onResize);
+    };
+  });
 
   // Watch for theme changes
   $: if ($currentTheme) {
-    applyTheme($currentTheme)
+    applyTheme($currentTheme);
   }
 
   async function checkApiStatus() {
     try {
-      const health = await healthCheck()
-      apiConfigured = health.api_key_configured
+      const health = await healthCheck();
+      apiConfigured = health.api_key_configured;
     } catch (err) {
-      console.error('Health check failed:', err)
+      console.error("Health check failed:", err);
     }
   }
 
   async function navigateTo(view) {
-    currentView = view
+    currentView = view;
     // Re-check API status when navigating to scanner (in case settings were just saved)
-    if (view === 'scanner') {
-      await checkApiStatus()
+    if (view === "scanner") {
+      await checkApiStatus();
     }
   }
 
   function handleProcessComplete() {
-    scanPanelKey += 1
+    scanPanelKey += 1;
   }
 
   function handleSidebarToggle() {
     if (isMobile) {
-      sidebarOpen = !sidebarOpen
+      sidebarOpen = !sidebarOpen;
     } else {
-      sidebarCollapsed = !sidebarCollapsed
+      sidebarCollapsed = !sidebarCollapsed;
     }
   }
 
   $: sidebarWidth = isMobile
-    ? '15.5rem'
+    ? "15.5rem"
     : sidebarCollapsed
-      ? '3.75rem'
-      : '16rem'
+      ? "3.75rem"
+      : "16rem";
 </script>
 
-<Sidebar.Provider style={`--sidebar-width: ${sidebarWidth}; --header-height: 4rem;`}>
+<Sidebar.Provider
+  style={`--sidebar-width: ${sidebarWidth}; --header-height: 4rem;`}
+>
   {#if isMobile && sidebarOpen}
     <div
       class="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
@@ -141,30 +143,32 @@
           </Button>
         </div>
       {/if}
-      {#if !apiConfigured && currentView === 'scanner'}
+      {#if !apiConfigured && currentView === "scanner"}
         <div class="border-b border-yellow-500/10 bg-yellow-500/5">
           <div class="px-6 md:px-8 py-3">
-            <p class="text-[13px] text-yellow-100">Configure a metadata source in Settings to get started</p>
+            <p class="text-[13px] text-yellow-100">
+              Configure a metadata source in Settings to get started
+            </p>
           </div>
         </div>
       {/if}
 
       <div class="px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10">
-        {#if currentView === 'settings'}
+        {#if currentView === "settings"}
           <SettingsPanel />
-        {:else if currentView === 'history'}
+        {:else if currentView === "history"}
           <HistoryPanel />
-        {:else if currentView === 'scanner'}
+        {:else if currentView === "scanner"}
           {#key scanPanelKey}
             <ScanPanel
               bind:selectedFilePaths={selectedFiles}
               bind:metadataProvider
-              apiConfigured={apiConfigured}
-              onOpenSettings={() => navigateTo('settings')}
-              onOpenHistory={() => navigateTo('history')}
+              {apiConfigured}
+              onOpenSettings={() => navigateTo("settings")}
+              onOpenHistory={() => navigateTo("history")}
             />
           {/key}
-        {:else if currentView === 'library'}
+        {:else if currentView === "library"}
           <LibraryPanel />
         {/if}
       </div>

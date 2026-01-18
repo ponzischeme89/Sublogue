@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import re
 import logging
+from logging_utils import get_logger
 from typing import Optional, List
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class KeywordStripper:

@@ -9,8 +9,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, scoped_session
 import json
 import logging
+from logging_utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 Base = declarative_base()
 
@@ -504,11 +505,13 @@ class DatabaseManager:
         finally:
             session.close()
 
-    def get_latest_scan_files(self):
-        """Get latest scan entry per file path"""
+    def get_latest_scan_files(self, limit=500, offset=0):
+        """Get latest scan entry per file path, paged by scan_files.created_at"""
         session = self.get_session()
         try:
-            files = session.query(ScanFile).order_by(ScanFile.created_at.desc()).all()
+            files = session.query(ScanFile).order_by(
+                ScanFile.created_at.desc()
+            ).offset(offset).limit(limit).all()
             latest = {}
             for file_entry in files:
                 if file_entry.file_path in latest:

@@ -154,7 +154,7 @@
       >
         {#if !collapsed}
           <Badge className="bg-white/10 text-text-secondary"
-            >v1.0.7 Release Candiate</Badge
+            >v1.0.8 Release Candiate</Badge
           >
         {:else}
           <Badge className="bg-white/10 text-text-secondary">v</Badge>

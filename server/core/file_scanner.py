@@ -1,4 +1,5 @@
 import logging
+from logging_utils import get_logger
 import os
 import re
 from pathlib import Path
@@ -8,15 +9,7 @@ from typing import Generator, List, Dict
 # Logging configuration
 # ------------------------------------------------------------
 
-logger = logging.getLogger("FileScanner")
-logger.setLevel(logging.INFO)  # Change to DEBUG for deep tracing
-
-handler = logging.StreamHandler()
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+logger = get_logger("FileScanner")
 
 # ------------------------------------------------------------
 # Import subtitle parser

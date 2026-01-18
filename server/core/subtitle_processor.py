@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import logging
+from logging_utils import get_logger
 import textwrap
 import time
 import os
@@ -25,8 +26,7 @@ except ImportError:
     except ImportError:
         _HAS_MSVCRT = False
 
-logger = logging.getLogger("SubtitleProcessor")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = get_logger("SubtitleProcessor")
 
 # ============================================================
 # Sentinel tag for deterministic detection

@@ -338,8 +338,8 @@ export async function getStatistics() {
  * GET /api/library - Get library health report
  * Returns: { success, scans: [...] }
  */
-export async function getLibraryReport(limit = 25) {
-  return apiFetch(`/library?limit=${limit}`)
+export async function getLibraryReport(limit = 200, offset = 0) {
+  return apiFetch(`/library?limit=${limit}&offset=${offset}`)
 }
 
 // ============ SCHEDULED SCANS API ============

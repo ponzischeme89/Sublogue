@@ -8,13 +8,23 @@
   let loading = false;
   let error = null;
   let expanded = {};
+  let page = 0;
+  const pageSize = 200;
 
-  async function loadLibrary() {
+  async function loadLibrary(reset = true) {
     loading = true;
     error = null;
     try {
-      const response = await getLibraryReport();
-      items = response.items || [];
+      if (reset) {
+        page = 0;
+        items = [];
+      }
+      const response = await getLibraryReport(pageSize, page * pageSize);
+      const nextItems = response.items || [];
+      items = reset ? nextItems : [...items, ...nextItems];
+      if (nextItems.length > 0) {
+        page += 1;
+      }
     } catch (err) {
       error = `Failed to load library report: ${err.message}`;
     } finally {
@@ -26,7 +36,7 @@
     expanded = { ...expanded, [key]: !expanded[key] };
   }
 
-  onMount(loadLibrary);
+  onMount(() => loadLibrary(true));
 </script>
 
 <div class="space-y-6">
@@ -41,7 +51,7 @@
       variant="outline"
       size="sm"
       className="border-white/15 text-text-secondary hover:bg-white/10"
-      on:click={loadLibrary}
+      on:click={() => loadLibrary(true)}
       disabled={loading}
     >
       <RefreshCcw class="h-4 w-4" />
@@ -148,6 +158,17 @@
           {/if}
         </div>
       {/each}
+      <div class="flex justify-center">
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-white/15 text-text-secondary hover:bg-white/10"
+          on:click={() => loadLibrary(false)}
+          disabled={loading}
+        >
+          Load more
+        </Button>
+      </div>
     </div>
   {/if}
 </div>

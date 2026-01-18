@@ -7,6 +7,7 @@
     processFiles,
     clearAllSuggestedMatches,
     getFolderRules,
+    getScanHistory,
   } from "../lib/api.js";
   import ResultsList from "./ResultsList.svelte";
   import TypewriterQuote from "./TypewriterQuote.svelte";
@@ -118,7 +119,11 @@
     filesFound: 0,
     message: "",
     scanning: false,
+    startedAt: null,
+    estimatedFinishAt: null,
   };
+  let scanHistory = [];
+  let expectedTotalFiles = null;
 
   // Scan cancellation
   let scanAbortController = null;
@@ -166,6 +171,12 @@
       } catch (err) {
         console.error("Failed to load folder rules:", err);
       }
+      try {
+        const historyResponse = await getScanHistory(10);
+        scanHistory = historyResponse.scans || [];
+      } catch (err) {
+        console.error("Failed to load scan history:", err);
+      }
     } catch (err) {
       console.error("Failed to load initial data:", err);
     }
@@ -190,7 +201,19 @@
       filesFound: 0,
       message: "Starting scan...",
       scanning: true,
+      startedAt: new Date(),
+      estimatedFinishAt: null,
     };
+    expectedTotalFiles = null;
+    if (scanHistory.length > 0 && directory) {
+      const normalizedDir = directory.toLowerCase();
+      const lastMatch = scanHistory.find(
+        (scan) => (scan.directory || "").toLowerCase() === normalizedDir,
+      );
+      if (lastMatch && lastMatch.files_found) {
+        expectedTotalFiles = lastMatch.files_found;
+      }
+    }
     addToast({ message: "Scan started.", tone: "info" });
 
     // Reset files array before starting new scan
@@ -219,6 +242,23 @@
               message: data.message,
               filesFound: data.filesFound,
             };
+            if (
+              scanProgress.startedAt &&
+              expectedTotalFiles &&
+              data.filesFound > 0
+            ) {
+              const elapsedMs =
+                new Date().getTime() - scanProgress.startedAt.getTime();
+              const estimatedTotalMs =
+                (elapsedMs * expectedTotalFiles) / data.filesFound;
+              const estimatedFinish = new Date(
+                scanProgress.startedAt.getTime() + estimatedTotalMs,
+              );
+              scanProgress = {
+                ...scanProgress,
+                estimatedFinishAt: estimatedFinish,
+              };
+            }
 
             // Incrementally add files as they're found
             const previousLength = files.length;
@@ -244,6 +284,9 @@
             }
 
             lastScan = new Date().toISOString();
+            if (data.count != null) {
+              expectedTotalFiles = data.count;
+            }
 
             // Save to store
             scanResults.setScanResults(files, directory);
@@ -343,6 +386,7 @@
     } finally {
       scanning = false;
       scanProgress.scanning = false;
+      scanProgress.estimatedFinishAt = null;
       scanAbortController = null;
     }
   }
@@ -715,6 +759,14 @@
               >
               <span class="text-text-tertiary">Scanning in progress...</span>
             </div>
+            {#if scanProgress.startedAt}
+              <div class="mt-2 text-[11px] text-text-tertiary">
+                Started at {scanProgress.startedAt.toLocaleTimeString()}
+                {#if scanProgress.estimatedFinishAt}
+                  · Estimated finish {scanProgress.estimatedFinishAt.toLocaleTimeString()}
+                {/if}
+              </div>
+            {/if}
 
             <!-- Progress bar -->
             <div
