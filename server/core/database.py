@@ -139,6 +139,28 @@ class SuggestedMatch(Base):
         return f"<SuggestedMatch(id={self.id}, file_name='{self.file_name}', matched_title='{self.matched_title}')>"
 
 
+class FolderRule(Base):
+    """Folder-specific rules that override default settings"""
+    __tablename__ = 'folder_rules'
+
+    id = Column(Integer, primary_key=True)
+    directory = Column(String(500), nullable=False, unique=True, index=True)
+    preferred_source = Column(String(50))
+    insertion_position = Column(String(50))
+    language = Column(String(20))
+    subtitle_title_bold = Column(Boolean)
+    subtitle_plot_italic = Column(Boolean)
+    subtitle_show_director = Column(Boolean)
+    subtitle_show_actors = Column(Boolean)
+    subtitle_show_released = Column(Boolean)
+    subtitle_show_genre = Column(Boolean)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<FolderRule(id={self.id}, directory='{self.directory}')>"
+
+
 class DatabaseManager:
     """Manages database connections and operations"""
 
@@ -755,6 +777,98 @@ class DatabaseManager:
         except Exception as e:
             session.rollback()
             logger.error(f"Error clearing suggested matches: {e}")
+            return False
+        finally:
+            session.close()
+
+    # ============ FOLDER RULES OPERATIONS ============
+
+    def get_folder_rule(self, directory):
+        """Get a folder rule for a specific directory"""
+        session = self.get_session()
+        try:
+            rule = session.query(FolderRule).filter_by(directory=directory).first()
+            if not rule:
+                return None
+            return {
+                "directory": rule.directory,
+                "preferred_source": rule.preferred_source,
+                "insertion_position": rule.insertion_position,
+                "language": rule.language,
+                "subtitle_title_bold": rule.subtitle_title_bold,
+                "subtitle_plot_italic": rule.subtitle_plot_italic,
+                "subtitle_show_director": rule.subtitle_show_director,
+                "subtitle_show_actors": rule.subtitle_show_actors,
+                "subtitle_show_released": rule.subtitle_show_released,
+                "subtitle_show_genre": rule.subtitle_show_genre,
+            }
+        finally:
+            session.close()
+
+    def get_all_folder_rules(self):
+        """Get all folder rules"""
+        session = self.get_session()
+        try:
+            rules = session.query(FolderRule).order_by(FolderRule.directory.asc()).all()
+            return [
+                {
+                    "directory": rule.directory,
+                    "preferred_source": rule.preferred_source,
+                    "insertion_position": rule.insertion_position,
+                    "language": rule.language,
+                    "subtitle_title_bold": rule.subtitle_title_bold,
+                    "subtitle_plot_italic": rule.subtitle_plot_italic,
+                    "subtitle_show_director": rule.subtitle_show_director,
+                    "subtitle_show_actors": rule.subtitle_show_actors,
+                    "subtitle_show_released": rule.subtitle_show_released,
+                    "subtitle_show_genre": rule.subtitle_show_genre,
+                }
+                for rule in rules
+            ]
+        finally:
+            session.close()
+
+    def upsert_folder_rule(self, directory, rule_data):
+        """Create or update a folder rule"""
+        session = self.get_session()
+        try:
+            rule = session.query(FolderRule).filter_by(directory=directory).first()
+            if not rule:
+                rule = FolderRule(directory=directory)
+                session.add(rule)
+
+            rule.preferred_source = rule_data.get("preferred_source")
+            rule.insertion_position = rule_data.get("insertion_position")
+            rule.language = rule_data.get("language")
+            rule.subtitle_title_bold = rule_data.get("subtitle_title_bold")
+            rule.subtitle_plot_italic = rule_data.get("subtitle_plot_italic")
+            rule.subtitle_show_director = rule_data.get("subtitle_show_director")
+            rule.subtitle_show_actors = rule_data.get("subtitle_show_actors")
+            rule.subtitle_show_released = rule_data.get("subtitle_show_released")
+            rule.subtitle_show_genre = rule_data.get("subtitle_show_genre")
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error saving folder rule: {e}")
+            return False
+        finally:
+            session.close()
+
+    def delete_folder_rule(self, directory):
+        """Delete a folder rule for a directory"""
+        session = self.get_session()
+        try:
+            rule = session.query(FolderRule).filter_by(directory=directory).first()
+            if rule:
+                session.delete(rule)
+                session.commit()
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error deleting folder rule: {e}")
             return False
         finally:
             session.close()

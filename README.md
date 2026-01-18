@@ -14,6 +14,7 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 - Insert plot summaries into existing .srt files without shifting timings
 - Fetch metadata (plot, runtime, director, cast, IMDb/RT ratings) using OMDb, TMDb, and TVMaze — add these integrations under Settings before scanning
 - Preserve original dialogue and timing with safe insertion logic
+- Folder Rules to have seperate logic for different folders (for example TV shows could have runtime but not actors, etc)
 - Clean, fast web UI for scanning and batch processing built with Svelte + Python/Flask
 - Three themes included: OLED, Ocean, and Dracula White
 

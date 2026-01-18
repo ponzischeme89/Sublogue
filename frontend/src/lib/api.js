@@ -74,6 +74,38 @@ export async function updateSettings(settings) {
   })
 }
 
+// ============ FOLDER RULES API ============
+
+/**
+ * GET /api/folder-rules - Fetch folder rules
+ * Returns: { success, rules: [...] }
+ */
+export async function getFolderRules() {
+  return apiFetch('/folder-rules')
+}
+
+/**
+ * POST /api/folder-rules - Create or update a folder rule
+ * Body: { directory, preferred_source?, insertion_position?, language?, subtitle_*? }
+ * Returns: { success }
+ */
+export async function saveFolderRule(rule) {
+  return apiFetch('/folder-rules', {
+    method: 'POST',
+    body: JSON.stringify(rule)
+  })
+}
+
+/**
+ * DELETE /api/folder-rules/<directory> - Delete a folder rule
+ * Returns: { success }
+ */
+export async function deleteFolderRule(directory) {
+  return apiFetch(`/folder-rules/${encodeURIComponent(directory)}`, {
+    method: 'DELETE'
+  })
+}
+
 // ============ SCAN API ============
 
 /**
@@ -218,10 +250,17 @@ export async function getScanStatus() {
  * - "full": Returns multiple results to choose from (2 API calls) - good for manual search
  * Returns: { success, results: [{title, year, plot, runtime, imdb_rating, media_type, poster, imdb_id}] }
  */
-export async function searchTitle(query, mode = "quick") {
+export async function searchTitle(query, mode = "quick", options = {}) {
+  const body = { query, mode }
+  if (options.preferredSource) {
+    body.preferred_source = options.preferredSource
+  }
+  if (options.language) {
+    body.language = options.language
+  }
   return apiFetch('/search', {
     method: 'POST',
-    body: JSON.stringify({ query, mode })
+    body: JSON.stringify(body)
   })
 }
 

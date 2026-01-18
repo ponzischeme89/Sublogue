@@ -6,9 +6,10 @@
   import IntegrationsSettings from './settings/IntegrationsSettings.svelte'
   import FilenameCleaningSettings from './settings/FilenameCleaningSettings.svelte'
   import ScheduledScansSettings from './settings/ScheduledScansSettings.svelte'
+  import FolderRulesSettings from './settings/FolderRulesSettings.svelte'
   import TasksSettings from './settings/TasksSettings.svelte'
   import { addToast } from '../lib/toastStore.js'
-  import { Bolt, Calendar, Plug, Settings, Wand2 } from 'lucide-svelte'
+  import { Bolt, Calendar, Folder, Plug, Settings, Wand2 } from 'lucide-svelte'
 
   let currentSection = 'general'
   let settings = {}
@@ -19,6 +20,7 @@
 
   const sections = [
     { id: 'general', label: 'General', icon: 'settings' },
+    { id: 'folder-rules', label: 'Folder Rules', icon: 'folder' },
     { id: 'scheduled', label: 'Scheduled Scans', icon: 'calendar' },
     { id: 'cleanup', label: 'Cleanup', icon: 'wand' },
     { id: 'integrations', label: 'Integrations', icon: 'plug' },
@@ -135,6 +137,8 @@
                   <Wand2 class="w-4 h-4" />
                 {:else if section.icon === 'plug'}
                   <Plug class="w-4 h-4" />
+                {:else if section.icon === 'folder'}
+                  <Folder class="w-4 h-4" />
                 {/if}
                 <span class="text-[13px] font-medium">{section.label}</span>
           </button>
@@ -159,6 +163,8 @@
       <div class="rounded-xl border border-border bg-card/60 p-6 lg:p-8 shadow-sm">
         {#if currentSection === 'general'}
           <GeneralSettings {settings} {saving} onSave={handleSave} />
+        {:else if currentSection === 'folder-rules'}
+          <FolderRulesSettings {settings} />
         {:else if currentSection === 'scheduled'}
           <ScheduledScansSettings {settings} />
         {:else if currentSection === 'cleanup'}

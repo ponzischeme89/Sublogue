@@ -18,7 +18,7 @@ class TMDbClient:
         self.semaphore = asyncio.Semaphore(5)  # Limit concurrent requests
         self.db_manager = db_manager
 
-    async def search_movie(self, title, year=None):
+    async def search_movie(self, title, year=None, language=None):
         """
         Search for a movie by title
 
@@ -37,6 +37,8 @@ class TMDbClient:
             }
             if year:
                 params["year"] = year
+            if language:
+                params["language"] = language
 
             try:
                 start_time = time.time()
@@ -84,7 +86,7 @@ class TMDbClient:
                 logging.error(f"Error searching TMDb for movie '{title}': {e}")
                 return None
 
-    async def search_tv(self, title, year=None):
+    async def search_tv(self, title, year=None, language=None):
         """
         Search for a TV series by title
 
@@ -103,6 +105,8 @@ class TMDbClient:
             }
             if year:
                 params["first_air_date_year"] = year
+            if language:
+                params["language"] = language
 
             try:
                 start_time = time.time()
@@ -150,7 +154,7 @@ class TMDbClient:
                 logging.error(f"Error searching TMDb for TV '{title}': {e}")
                 return None
 
-    async def get_movie_details(self, movie_id):
+    async def get_movie_details(self, movie_id, language=None):
         """
         Get detailed movie information
 
@@ -163,6 +167,8 @@ class TMDbClient:
         async with self.semaphore:
             url = f"{self.base_url}/movie/{movie_id}"
             params = {"api_key": self.api_key}
+            if language:
+                params["language"] = language
 
             try:
                 async with aiohttp.ClientSession() as session:
@@ -177,7 +183,7 @@ class TMDbClient:
                 logging.error(f"Error getting TMDb movie details for ID {movie_id}: {e}")
                 return None
 
-    async def get_tv_details(self, tv_id):
+    async def get_tv_details(self, tv_id, language=None):
         """
         Get detailed TV series information
 
@@ -190,6 +196,8 @@ class TMDbClient:
         async with self.semaphore:
             url = f"{self.base_url}/tv/{tv_id}"
             params = {"api_key": self.api_key}
+            if language:
+                params["language"] = language
 
             try:
                 async with aiohttp.ClientSession() as session:
@@ -204,7 +212,7 @@ class TMDbClient:
                 logging.error(f"Error getting TMDb TV details for ID {tv_id}: {e}")
                 return None
 
-    async def get_tv_season(self, tv_id, season_number):
+    async def get_tv_season(self, tv_id, season_number, language=None):
         """
         Get TV season information
 
@@ -218,6 +226,8 @@ class TMDbClient:
         async with self.semaphore:
             url = f"{self.base_url}/tv/{tv_id}/season/{season_number}"
             params = {"api_key": self.api_key}
+            if language:
+                params["language"] = language
 
             try:
                 async with aiohttp.ClientSession() as session:
@@ -232,7 +242,7 @@ class TMDbClient:
                 logging.error(f"Error getting TMDb season data: {e}")
                 return None
 
-    async def fetch_summary(self, title, media_type="movie", year=None, season=None, episode=None):
+    async def fetch_summary(self, title, media_type="movie", year=None, season=None, episode=None, language=None):
         """
         Fetch summary for movie or TV series
 
@@ -251,14 +261,14 @@ class TMDbClient:
         try:
             if media_type == "tv":
                 # Search for TV series
-                search_result = await self.search_tv(title, year)
+                search_result = await self.search_tv(title, year, language=language)
                 if not search_result:
                     return None
 
                 tv_id = search_result["id"]
 
                 # Get detailed TV info
-                tv_details = await self.get_tv_details(tv_id)
+                tv_details = await self.get_tv_details(tv_id, language=language)
                 if not tv_details:
                     return None
 
@@ -266,7 +276,7 @@ class TMDbClient:
 
                 # If specific season/episode requested, try to get that plot
                 if season is not None:
-                    season_data = await self.get_tv_season(tv_id, season)
+                    season_data = await self.get_tv_season(tv_id, season, language=language)
                     if season_data and episode is not None:
                         episodes = season_data.get("episodes", [])
                         for ep in episodes:
@@ -291,14 +301,14 @@ class TMDbClient:
 
             else:  # movie
                 # Search for movie
-                search_result = await self.search_movie(title, year)
+                search_result = await self.search_movie(title, year, language=language)
                 if not search_result:
                     return None
 
                 movie_id = search_result["id"]
 
                 # Get detailed movie info
-                movie_details = await self.get_movie_details(movie_id)
+                movie_details = await self.get_movie_details(movie_id, language=language)
                 if not movie_details:
                     return None
 

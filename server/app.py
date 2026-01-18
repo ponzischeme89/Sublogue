@@ -208,6 +208,43 @@ def _get_str_setting(key: str, default: str) -> str:
         return default
     return str(value)
 
+def _get_folder_rule_for_path(file_path: str, rules: list[dict]) -> dict | None:
+    """Pick the most specific folder rule that matches the file path."""
+    if not rules:
+        return None
+    normalized_file = os.path.normcase(os.path.abspath(file_path))
+    best_rule = None
+    best_len = -1
+    for rule in rules:
+        directory = rule.get("directory")
+        if not directory:
+            continue
+        normalized_dir = os.path.normcase(os.path.abspath(directory))
+        normalized_dir = normalized_dir.rstrip(os.sep)
+        prefix = normalized_dir + os.sep
+        if normalized_file == normalized_dir or normalized_file.startswith(prefix):
+            if len(normalized_dir) > best_len:
+                best_len = len(normalized_dir)
+                best_rule = rule
+    return best_rule
+
+
+def _merge_format_options(base_options: SubtitleFormatOptions, rule: dict | None) -> SubtitleFormatOptions:
+    """Merge folder rule overrides into format options."""
+    if not rule:
+        return base_options
+    def _override_bool(key: str, current: bool) -> bool:
+        value = rule.get(key)
+        return current if value is None else bool(value)
+    return SubtitleFormatOptions(
+        title_bold=_override_bool("subtitle_title_bold", base_options.title_bold),
+        plot_italic=_override_bool("subtitle_plot_italic", base_options.plot_italic),
+        show_director=_override_bool("subtitle_show_director", base_options.show_director),
+        show_actors=_override_bool("subtitle_show_actors", base_options.show_actors),
+        show_released=_override_bool("subtitle_show_released", base_options.show_released),
+        show_genre=_override_bool("subtitle_show_genre", base_options.show_genre),
+    )
+
 
 def get_format_options_from_settings() -> SubtitleFormatOptions:
     """Load subtitle formatting options from database settings."""
@@ -670,6 +707,63 @@ def save_suggested_matches():
         }), 500
 
 
+@app.route('/api/folder-rules', methods=['GET'])
+def get_folder_rules():
+    """Get all folder rules"""
+    try:
+        rules = db.get_all_folder_rules()
+        return jsonify({
+            "success": True,
+            "rules": rules
+        })
+    except Exception as e:
+        logger.error(f"Error fetching folder rules: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/folder-rules', methods=['POST'])
+def save_folder_rule():
+    """Create or update a folder rule"""
+    try:
+        data = request.json or {}
+        directory = data.get("directory", "").strip()
+        if not directory:
+            return jsonify({
+                "success": False,
+                "error": "Directory is required"
+            }), 400
+
+        success = db.upsert_folder_rule(directory, data)
+        return jsonify({
+            "success": success
+        })
+    except Exception as e:
+        logger.error(f"Error saving folder rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/folder-rules/<path:directory>', methods=['DELETE'])
+def delete_folder_rule(directory):
+    """Delete a folder rule for a directory"""
+    try:
+        success = db.delete_folder_rule(directory)
+        return jsonify({
+            "success": success
+        })
+    except Exception as e:
+        logger.error(f"Error deleting folder rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @app.route('/api/suggested-matches/<path:file_path>', methods=['DELETE'])
 def delete_suggested_match(file_path):
     """Delete a suggested match for a file"""
@@ -797,7 +891,89 @@ def search_title():
                 "error": "API not configured"
             }), 400
 
+        preferred_source = data.get("preferred_source") or _get_str_setting("preferred_source", "omdb")
+        language = data.get("language")
+
         results = []
+        if preferred_source == "tmdb" and tmdb_client:
+            try:
+                import aiohttp
+                import asyncio
+
+                async def tmdb_search(title, mode, language=None):
+                    """TMDb search with optional language support (1 API call)"""
+                    start_time = time.time()
+
+                    url = f"{tmdb_client.base_url}/search/multi"
+                    params = {
+                        "api_key": tmdb_client.api_key,
+                        "query": title
+                    }
+                    if language:
+                        params["language"] = language
+
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(url, params=params) as resp:
+                            response_time_ms = int((time.time() - start_time) * 1000)
+                            if resp.status != 200:
+                                db.track_api_call(
+                                    provider="tmdb",
+                                    endpoint="/search/multi",
+                                    success=False,
+                                    response_time_ms=response_time_ms,
+                                    call_count=1
+                                )
+                                return []
+
+                            data = await resp.json()
+                            items = [
+                                item for item in data.get("results", [])
+                                if item.get("media_type") in ("movie", "tv")
+                            ]
+                            if mode == "quick":
+                                items = items[:1]
+                            else:
+                                items = items[:5]
+
+                            results = []
+                            for item in items:
+                                title_value = item.get("title") or item.get("name")
+                                date_value = item.get("release_date") or item.get("first_air_date") or ""
+                                year = date_value[:4] if date_value else "N/A"
+                                poster_path = item.get("poster_path")
+                                poster = f"https://image.tmdb.org/t/p/w185{poster_path}" if poster_path else None
+                                vote_average = item.get("vote_average")
+                                imdb_rating = f"{vote_average:.1f}/10" if isinstance(vote_average, (int, float)) else "N/A"
+
+                                results.append({
+                                    "title": title_value,
+                                    "year": year,
+                                    "plot": item.get("overview") or "No plot available",
+                                    "runtime": None,
+                                    "imdb_rating": imdb_rating,
+                                    "media_type": item.get("media_type"),
+                                    "poster": poster,
+                                    "imdb_id": None
+                                })
+
+                            db.track_api_call(
+                                provider="tmdb",
+                                endpoint="/search/multi",
+                                success=True,
+                                response_time_ms=response_time_ms,
+                                call_count=1
+                            )
+                            return results
+
+                results = asyncio.run(tmdb_search(query, mode, language))
+                return jsonify({
+                    "success": True,
+                    "results": results
+                })
+
+            except Exception as e:
+                logger.error(f"Error searching TMDb: {e}")
+
         if omdb_client:
             try:
                 import aiohttp
@@ -986,7 +1162,7 @@ def process_files():
                 "error": "Metadata provider not configured"
             }), 400
 
-        # Load format options from settings
+        # Load default format options from settings
         format_options = get_format_options_from_settings()
 
         # Load strip_keywords setting (default True for better matching)
@@ -994,6 +1170,12 @@ def process_files():
 
         # Load clean_subtitle_content setting (default True for ad removal)
         clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
+
+        # Load default insertion position and preferred source
+        default_insertion_position = _get_str_setting("insertion_position", "start")
+        default_preferred_source = _get_str_setting("preferred_source", "omdb")
+
+        folder_rules = db.get_all_folder_rules()
 
         # Create a processing run in database
         run_id = db.create_run(total_files=len(file_paths))
@@ -1006,14 +1188,23 @@ def process_files():
         for file_path in file_paths:
             try:
                 # Process file asynchronously with optional title override
+                rule = _get_folder_rule_for_path(file_path, folder_rules)
+                effective_format = _merge_format_options(format_options, rule)
+                insertion_position = rule.get("insertion_position") if rule else None
+                preferred_source = rule.get("preferred_source") if rule else None
+                language = rule.get("language") if rule else None
+
                 result = asyncio.run(processor.process_file(
                     file_path,
                     duration,
                     force_reprocess=force_reprocess,
                     title_override=title_override,
-                    format_options=format_options,
+                    format_options=effective_format,
                     strip_keywords=strip_keywords,
                     clean_subtitle_content=clean_subtitle_content,
+                    insertion_position=insertion_position or default_insertion_position,
+                    preferred_source=preferred_source or default_preferred_source,
+                    language=language,
                 ))
 
                 # Track success/failure
@@ -1124,7 +1315,7 @@ def process_batch():
             successful_count = 0
             failed_count = 0
 
-            # Load format options from settings
+            # Load default format options from settings
             format_options = get_format_options_from_settings()
 
             # Load strip_keywords setting (default True for better matching)
@@ -1132,6 +1323,10 @@ def process_batch():
 
             # Load clean_subtitle_content setting (default True for ad removal)
             clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
+
+            default_insertion_position = _get_str_setting("insertion_position", "start")
+            default_preferred_source = _get_str_setting("preferred_source", "omdb")
+            folder_rules = db.get_all_folder_rules()
 
             # Create a processing run
             run_id = db.create_run(total_files=total)
@@ -1148,14 +1343,23 @@ def process_batch():
 
                 try:
                     # Process file with title override (no API call needed - data is pre-fetched)
+                    rule = _get_folder_rule_for_path(file_path, folder_rules)
+                    effective_format = _merge_format_options(format_options, rule)
+                    insertion_position = rule.get("insertion_position") if rule else None
+                    preferred_source = rule.get("preferred_source") if rule else None
+                    language = rule.get("language") if rule else None
+
                     result = asyncio.run(processor.process_file(
                         file_path,
                         duration,
                         force_reprocess=True,  # Always reprocess when applying matches
                         title_override=title_override,
-                        format_options=format_options,
+                        format_options=effective_format,
                         strip_keywords=strip_keywords,
                         clean_subtitle_content=clean_subtitle_content,
+                        insertion_position=insertion_position or default_insertion_position,
+                        preferred_source=preferred_source or default_preferred_source,
+                        language=language,
                     ))
 
                     if result["success"]:

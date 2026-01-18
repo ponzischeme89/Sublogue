@@ -23,6 +23,7 @@
   export let onSelectionChange = () => {};
   export let disabled = false;
   export let metadataProvider = "omdb";
+  export let metadataLanguage = "";
   export let activeIntegrations = { omdb: true, tmdb: true, tvmaze: true };
   export let loading = false;
 
@@ -198,7 +199,10 @@
     searchingInline = { ...searchingInline };
 
     try {
-      const response = await searchTitle(query);
+      const response = await searchTitle(query, "quick", {
+        preferredSource: metadataProvider,
+        language: metadataLanguage,
+      });
       inlineSearchResults[file.path] = response.results || [];
       inlineSearchResults = { ...inlineSearchResults };
     } catch (err) {
@@ -261,7 +265,10 @@
 
     try {
       // Use "full" mode for manual search to get multiple results to choose from
-      const response = await searchTitle(cleanTitle, "full");
+      const response = await searchTitle(cleanTitle, "full", {
+        preferredSource: metadataProvider,
+        language: metadataLanguage,
+      });
       searchResults = response.results || [];
     } catch (err) {
       searchError = "Failed to search for titles. Please try again.";
@@ -320,7 +327,10 @@
       const cleanTitle = extractSearchableTitle(file.name, file.title);
 
       try {
-        const response = await searchTitle(cleanTitle);
+        const response = await searchTitle(cleanTitle, "quick", {
+          preferredSource: metadataProvider,
+          language: metadataLanguage,
+        });
         const results = response.results || [];
 
         if (results.length > 0) {
@@ -520,7 +530,10 @@
       );
 
       try {
-        const response = await searchTitle(cleanTitle);
+        const response = await searchTitle(cleanTitle, "quick", {
+          preferredSource: metadataProvider,
+          language: metadataLanguage,
+        });
         const results = response.results || [];
 
         if (results.length > 0) {
@@ -620,7 +633,10 @@
       );
 
       try {
-        const response = await searchTitle(cleanTitle);
+        const response = await searchTitle(cleanTitle, "quick", {
+          preferredSource: metadataProvider,
+          language: metadataLanguage,
+        });
         const results = response.results || [];
 
         if (results.length > 0) {

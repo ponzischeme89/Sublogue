@@ -13,6 +13,7 @@
   export let className = ''
   export let searchable = true
   export let dropup = false
+  export let displayPrefix = ''
 
   let open = false
   let search = ''
@@ -87,7 +88,7 @@
     <span class="flex items-center gap-2">
       <slot name="icon" />
       <span class={selectedLabel ? 'text-foreground' : 'text-muted-foreground'}>
-        {selectedLabel || placeholder}
+        {selectedLabel ? `${displayPrefix}${selectedLabel}` : placeholder}
       </span>
     </span>
     <svg

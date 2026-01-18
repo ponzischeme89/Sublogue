@@ -22,6 +22,7 @@
   className={className}
   dropup={true}
   searchable={false}
+  displayPrefix="Theme: "
   on:change={handleThemeChange}
 >
   <svelte:fragment slot="icon">

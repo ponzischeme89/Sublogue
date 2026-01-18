@@ -6,6 +6,7 @@
     updateSettings,
     processFiles,
     clearAllSuggestedMatches,
+    getFolderRules,
   } from "../lib/api.js";
   import ResultsList from "./ResultsList.svelte";
   import TypewriterQuote from "./TypewriterQuote.svelte";
@@ -63,6 +64,7 @@
   let lastScan = null;
   let selectedFilePaths = [];
   let metadataProvider = "omdb";
+  let metadataLanguage = "";
   let omdbEnabled = false;
   let tmdbEnabled = false;
   let tvmazeEnabled = false;
@@ -126,6 +128,9 @@
   export let onOpenHistory = null;
   export { selectedFilePaths, metadataProvider };
   let onboardingComplete = false;
+  let hasScannedBefore = false;
+  let folderRules = [];
+  let activeFolderRule = null;
 
   onMount(async () => {
     const initialTimer = setTimeout(() => {
@@ -152,6 +157,14 @@
       if (typeof localStorage !== "undefined") {
         onboardingComplete =
           localStorage.getItem("sublogue_onboarding_complete") === "true";
+        hasScannedBefore =
+          localStorage.getItem("sublogue_has_scanned") === "true";
+      }
+      try {
+        const rulesResponse = await getFolderRules();
+        folderRules = rulesResponse.rules || [];
+      } catch (err) {
+        console.error("Failed to load folder rules:", err);
       }
     } catch (err) {
       console.error("Failed to load initial data:", err);
@@ -234,6 +247,10 @@
 
             // Save to store
             scanResults.setScanResults(files, directory);
+            if (typeof localStorage !== "undefined") {
+              localStorage.setItem("sublogue_has_scanned", "true");
+              hasScannedBefore = true;
+            }
 
             // Show save prompt if scanning a new directory
             if (isDifferentDirectory) {
@@ -484,6 +501,31 @@
     metadataProvider = event.detail.source;
   }
 
+  function normalizePath(path) {
+    return (path || "")
+      .replace(/\//g, "\\")
+      .replace(/\\+$/, "")
+      .toLowerCase();
+  }
+
+  function findFolderRuleForDirectory(path, rules) {
+    const target = normalizePath(path);
+    if (!target) return null;
+    let bestRule = null;
+    let bestLength = -1;
+    for (const rule of rules) {
+      const dir = normalizePath(rule.directory);
+      if (!dir) continue;
+      if (target === dir || target.startsWith(dir + "\\")) {
+        if (dir.length > bestLength) {
+          bestLength = dir.length;
+          bestRule = rule;
+        }
+      }
+    }
+    return bestRule;
+  }
+
   function formatMetadataLabel(source) {
     if (source === "both") return "OMDb + TMDb";
     if (source === "tvmaze") return "TVmaze";
@@ -521,6 +563,19 @@
   $: failureCount = processingResults?.filter((r) => !r.success).length || 0;
   $: metadataSelected = !!metadataProvider;
   $: resolveMetadataProvider(activeMetadataOptions);
+  $: if (folderRules.length && directory) {
+    const matchedRule = findFolderRuleForDirectory(directory, folderRules);
+    activeFolderRule = matchedRule;
+    if (matchedRule) {
+      if (matchedRule.preferred_source) {
+        metadataProvider = matchedRule.preferred_source;
+      }
+      metadataLanguage = matchedRule.language || "";
+    } else {
+      activeFolderRule = null;
+      metadataLanguage = "";
+    }
+  }
   $: allStepsComplete = apiConfigured && metadataSelected && hasScanned;
   $: if (allStepsComplete && !onboardingComplete) {
     onboardingComplete = true;
@@ -528,7 +583,7 @@
       localStorage.setItem("sublogue_onboarding_complete", "true");
     }
   }
-  $: showTutorial = !onboardingComplete && !hasScanned;
+  $: showTutorial = !onboardingComplete && !hasScanned && !hasScannedBefore;
 </script>
 
 <div class="space-y-8">
@@ -746,6 +801,7 @@
           onSelectionChange={handleSelectionChange}
           disabled={!apiConfigured || processing}
           {metadataProvider}
+          {metadataLanguage}
           activeIntegrations={{
             omdb: omdbEnabled,
             tmdb: tmdbEnabled,
