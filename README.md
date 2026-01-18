@@ -30,6 +30,17 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 ## Getting started
 To get started installing Sublogue, expand on your posion below. Personally, I recommend **Komodo**. It's great.
 
+**Quick Start with Docker:**
+
+```sh
+docker run -d \
+  --name sublogue \
+  -p 5050:5000 \
+  -v /path/to/config:/config \
+  -v /path/to/media:/media \
+  ghcr.io/ponzischeme89/sublogue:latest
+```
+
 <details>
 <summary>⚓ Docker Compose</summary>
 Create `data/` and `media/` folders next to the compose file, then run:
