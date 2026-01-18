@@ -24,7 +24,12 @@
   export let disabled = false;
   export let metadataProvider = "omdb";
   export let metadataLanguage = "";
-  export let activeIntegrations = { omdb: true, tmdb: true, tvmaze: true };
+  export let activeIntegrations = {
+    omdb: true,
+    tmdb: true,
+    tvmaze: true,
+    wikipedia: true,
+  };
   export let loading = false;
 
   // Pagination
@@ -797,13 +802,15 @@
     if (!metadataProvider) return "Select source";
     if (metadataProvider === "both") return "OMDb + TMDb";
     if (metadataProvider === "tvmaze") return "TVmaze";
+    if (metadataProvider === "wikipedia") return "Wikipedia";
     return metadataProvider.toUpperCase();
   }
 
   $: omdbActive = activeIntegrations?.omdb ?? false;
   $: tmdbActive = activeIntegrations?.tmdb ?? false;
   $: tvmazeActive = activeIntegrations?.tvmaze ?? false;
-  $: hasActiveIntegrations = omdbActive || tmdbActive || tvmazeActive;
+  $: wikipediaActive = activeIntegrations?.wikipedia ?? false;
+  $: hasActiveIntegrations = omdbActive || tmdbActive || tvmazeActive || wikipediaActive;
   $: if (!hasActiveIntegrations && showMetadataDropup) {
     showMetadataDropup = false;
   }
@@ -825,6 +832,12 @@
       label: "TVmaze",
       description: "TV metadata without an API key",
       enabled: tvmazeActive,
+    },
+    {
+      value: "wikipedia",
+      label: "Wikipedia",
+      description: "Strict encyclopedia summaries",
+      enabled: wikipediaActive,
     },
     {
       value: "both",

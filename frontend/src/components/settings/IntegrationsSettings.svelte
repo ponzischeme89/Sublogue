@@ -12,11 +12,13 @@
   let omdbEnabled = settings.omdb_enabled ?? false;
   let tmdbEnabled = settings.tmdb_enabled ?? false;
   let tvmazeEnabled = settings.tvmaze_enabled ?? false;
+  let wikipediaEnabled = settings.wikipedia_enabled ?? false;
   let usage = null;
   let loadingUsage = false;
   let showOmdbHelp = false;
   let showTmdbHelp = false;
   let showTvmazeHelp = false;
+  let showWikipediaHelp = false;
 
   /* ===============================
      Lifecycle
@@ -45,6 +47,15 @@
     if (showTvmazeHelp) {
       showOmdbHelp = false;
       showTmdbHelp = false;
+    }
+  }
+
+  function toggleWikipediaHelp() {
+    showWikipediaHelp = !showWikipediaHelp;
+    if (showWikipediaHelp) {
+      showOmdbHelp = false;
+      showTmdbHelp = false;
+      showTvmazeHelp = false;
     }
   }
 
@@ -82,6 +93,7 @@
       omdb_enabled: omdbEnabled,
       tmdb_enabled: tmdbEnabled,
       tvmaze_enabled: tvmazeEnabled,
+      wikipedia_enabled: wikipediaEnabled,
     });
   }
 
@@ -133,6 +145,7 @@
   $: omdbUsage = usage?.omdb;
   $: tmdbUsage = usage?.tmdb;
   $: tvmazeUsage = usage?.tvmaze;
+  $: wikipediaUsage = usage?.wikipedia;
 
   $: omdbPercent = omdbUsage
     ? usagePercent(omdbUsage.total_calls_24h, omdbUsage.limit)
@@ -144,12 +157,19 @@
   $: tvmazePercent = tvmazeUsage
     ? usagePercent(tvmazeUsage.total_calls_24h, tvmazeUsage.limit)
     : 0;
+  $: wikipediaPercent = wikipediaUsage
+    ? usagePercent(wikipediaUsage.total_calls_24h, wikipediaUsage.limit)
+    : 0;
 
   $: omdbState = usageState(omdbPercent);
   $: tmdbState = usageState(tmdbPercent);
   $: tvmazeState = usageState(tvmazePercent);
+  $: wikipediaState = usageState(wikipediaPercent);
   $: enabledCount =
-    (omdbEnabled ? 1 : 0) + (tmdbEnabled ? 1 : 0) + (tvmazeEnabled ? 1 : 0);
+    (omdbEnabled ? 1 : 0) +
+    (tmdbEnabled ? 1 : 0) +
+    (tvmazeEnabled ? 1 : 0) +
+    (wikipediaEnabled ? 1 : 0);
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-8">
@@ -189,6 +209,13 @@
           >
             Add TVmaze
           </button>
+          <button
+            type="button"
+            class="px-4 py-2.5 rounded-lg border border-border bg-white/5 text-[12px] text-text-secondary hover:text-white hover:bg-bg-hover transition-colors"
+            on:click={() => (wikipediaEnabled = true)}
+          >
+            Add Wikipedia
+          </button>
         </div>
       </div>
     {/if}
@@ -226,6 +253,15 @@
                 on:click={() => (tvmazeEnabled = true)}
               >
                 Add TVmaze
+              </button>
+            {/if}
+            {#if !wikipediaEnabled}
+              <button
+                type="button"
+                class="px-3 py-2 rounded-lg border border-border bg-white/5 text-[12px] text-text-secondary hover:text-white hover:bg-bg-hover transition-colors"
+                on:click={() => (wikipediaEnabled = true)}
+              >
+                Add Wikipedia
               </button>
             {/if}
           </div>
@@ -435,6 +471,105 @@
                 <div class="absolute inset-0 flex items-center justify-center">
                   <span class="text-[10px] font-medium text-black/80">
                     {tvmazePercent}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
+      </div>
+      {/if}
+
+      <!-- ===============================
+           Wikipedia Integration
+           =============================== -->
+      {#if wikipediaEnabled}
+      <div class="border border-border rounded-xl p-6 space-y-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-[13px] font-medium">Wikipedia</h3>
+            <p class="text-[11px] text-text-tertiary mt-1">
+              Community encyclopedia summaries (strict title matching)
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="relative" use:clickOutside={() => (showWikipediaHelp = false)}>
+              <button
+                type="button"
+                class="h-8 w-8 rounded-full border border-border text-text-secondary hover:text-white hover:bg-bg-hover transition-all"
+                on:click={toggleWikipediaHelp}
+                aria-label="Wikipedia integration info"
+              >
+                <Info class="h-4 w-4 mx-auto" />
+              </button>
+              {#if showWikipediaHelp}
+                <div class="absolute right-0 mt-2 w-64 rounded-xl border border-border bg-bg-card p-4 text-[12px] text-text-secondary shadow-[0_12px_30px_rgba(0,0,0,0.35)] z-10">
+                  <p class="text-[12px] text-text-primary font-medium mb-1">Wikipedia strict mode</p>
+                  <p class="text-[11px] text-text-tertiary mb-3">
+                    We only accept exact title matches and validate year + media type.
+                  </p>
+                  <ol class="space-y-1 text-[11px] text-text-secondary">
+                    <li>Enable Wikipedia</li>
+                    <li>Select Wikipedia as metadata source</li>
+                    <li>Use exact titles for best matches</li>
+                  </ol>
+                </div>
+              {/if}
+            </div>
+            <span
+              class="px-2 py-1 text-[10px] font-medium text-text-secondary border border-border rounded-lg uppercase tracking-wide"
+            >
+              Movies & Series
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 rounded-lg border border-border bg-bg-card px-4 py-3">
+          <div>
+            <p class="text-[12px] font-medium text-text-primary">Enable Wikipedia</p>
+            <p class="text-[11px] text-text-tertiary">Use Wikipedia for strict metadata lookups.</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="sr-only peer" bind:checked={wikipediaEnabled} />
+            <span class="h-6 w-11 rounded-full border border-border bg-bg-card transition-colors peer-checked:bg-accent peer-checked:border-accent/60"></span>
+            <span class="absolute left-0.5 h-5 w-5 rounded-full bg-text-tertiary transition-transform peer-checked:translate-x-5 peer-checked:bg-bg-primary"></span>
+          </label>
+        </div>
+
+        {#if wikipediaUsage && wikipediaEnabled}
+          <div class="pt-4 border-t border-border space-y-2">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-text-secondary uppercase tracking-wide">
+                {usageLabel(wikipediaState)} Usage (24h)
+              </span>
+              <span class="text-text-tertiary">
+                Resets in {formatResetTime(wikipediaUsage.reset_time)}
+              </span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-text-tertiary">
+                  {wikipediaUsage.total_calls_24h} / {wikipediaUsage.limit} calls
+                </span>
+                <span class="text-text-tertiary">
+                  {wikipediaPercent}%
+                </span>
+              </div>
+
+              <div
+                class="relative h-3 bg-bg-primary rounded-full overflow-hidden"
+              >
+                <div
+                  class="absolute inset-y-0 left-0 transition-all {usageBarColor(
+                    wikipediaState,
+                  )}"
+                  style="width: {wikipediaPercent}%"
+                ></div>
+
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-[10px] font-medium text-black/80">
+                    {wikipediaPercent}%
                   </span>
                 </div>
               </div>

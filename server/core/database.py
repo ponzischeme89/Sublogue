@@ -133,7 +133,7 @@ class ApiUsage(Base):
     __tablename__ = 'api_usage'
 
     id = Column(Integer, primary_key=True)
-    provider = Column(String(50), nullable=False, index=True)  # omdb, tmdb, tvmaze
+    provider = Column(String(50), nullable=False, index=True)  # omdb, tmdb, tvmaze, wikipedia
     endpoint = Column(String(200))  # Specific endpoint called
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     success = Column(Boolean, default=True)
@@ -835,7 +835,7 @@ class DatabaseManager:
 
     def get_all_usage_stats(self):
         """Get usage statistics for all providers"""
-        providers = ['omdb', 'tmdb', 'tvmaze']
+        providers = ['omdb', 'tmdb', 'tvmaze', 'wikipedia']
         return {provider: self.get_usage_stats(provider) for provider in providers}
 
     # ============ SUGGESTED MATCHES OPERATIONS ============

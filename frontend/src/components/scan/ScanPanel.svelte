@@ -69,6 +69,7 @@
   let omdbEnabled = false;
   let tmdbEnabled = false;
   let tvmazeEnabled = false;
+  let wikipediaEnabled = false;
   let settingsLoaded = false;
   let defaultDirectory = "";
   let showSaveDirectoryPrompt = false;
@@ -104,6 +105,12 @@
       label: "TVmaze",
       description: "TV metadata without an API key",
       disabled: !tvmazeEnabled,
+    },
+    {
+      value: "wikipedia",
+      label: "Wikipedia",
+      description: "Strict encyclopedia summaries",
+      disabled: !wikipediaEnabled,
     },
     {
       value: "both",
@@ -150,6 +157,7 @@
       omdbEnabled = settings.omdb_enabled ?? false;
       tmdbEnabled = settings.tmdb_enabled ?? false;
       tvmazeEnabled = settings.tvmaze_enabled ?? false;
+      wikipediaEnabled = settings.wikipedia_enabled ?? false;
       settingsLoaded = true;
 
       // Load previous scan results from store if available
@@ -573,6 +581,7 @@
   function formatMetadataLabel(source) {
     if (source === "both") return "OMDb + TMDb";
     if (source === "tvmaze") return "TVmaze";
+    if (source === "wikipedia") return "Wikipedia";
     return source.toUpperCase();
   }
 
@@ -858,6 +867,7 @@
             omdb: omdbEnabled,
             tmdb: tmdbEnabled,
             tvmaze: tvmazeEnabled,
+            wikipedia: wikipediaEnabled,
           }}
           loading={processing}
           on:processSingle={handleProcessSingle}

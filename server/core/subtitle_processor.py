@@ -1251,10 +1251,11 @@ class SubtitleProcessor:
     MAX_SRT_BYTES = 5 * 1024 * 1024
     PLOT_SCAN_LINES = 40
 
-    def __init__(self, omdb_client=None, tmdb_client=None, tvmaze_client=None, preferred_source="omdb"):
+    def __init__(self, omdb_client=None, tmdb_client=None, tvmaze_client=None, wikipedia_client=None, preferred_source="omdb"):
         self.omdb_client = omdb_client
         self.tmdb_client = tmdb_client
         self.tvmaze_client = tvmaze_client
+        self.wikipedia_client = wikipedia_client
         self.preferred_source = preferred_source
 
     async def process_file(
@@ -1557,7 +1558,7 @@ class SubtitleProcessor:
         Fetch metadata from configured sources with fallback.
 
         Priority:
-        1. Preferred source (omdb, tmdb, tvmaze)
+        1. Preferred source (omdb, tmdb, tvmaze, wikipedia)
         2. Fallback to other source if preferred fails
 
         Year validation ensures we don't match wrong movies (e.g., "Eternity 2025"
@@ -1571,6 +1572,17 @@ class SubtitleProcessor:
         tmdb_type = "tv" if is_series else "movie"
 
         # Try preferred source first
+        if source_preference == "wikipedia" and self.wikipedia_client:
+            result = await self.wikipedia_client.fetch_summary(
+                movie_name,
+                year=year,
+                is_series=is_series,
+                season=season,
+                episode=episode,
+            )
+            if result:
+                logger.info("Found metadata via Wikipedia: %s (%s)", result.get("title"), result.get("year"))
+                return result
         if source_preference == "tvmaze" and self.tvmaze_client and is_series:
             result = await self.tvmaze_client.fetch_summary(
                 movie_name,
@@ -1629,6 +1641,18 @@ class SubtitleProcessor:
             )
             if result:
                 logger.info("Found metadata via TMDb (fallback): %s (%s)", result.get("title"), result.get("year"))
+                return result
+
+        if not result and self.wikipedia_client and source_preference != "wikipedia":
+            result = await self.wikipedia_client.fetch_summary(
+                movie_name,
+                year=year,
+                is_series=is_series,
+                season=season,
+                episode=episode,
+            )
+            if result:
+                logger.info("Found metadata via Wikipedia (fallback): %s (%s)", result.get("title"), result.get("year"))
                 return result
 
         if not result and self.tvmaze_client and source_preference != "tvmaze" and is_series:
@@ -1766,7 +1790,7 @@ class SubtitleProcessor:
         torrent/release tags like quality indicators (1080p, BluRay), codecs (x264, HEVC),
         release groups (YTS, RARBG), and subtitle ads (OpenSubtitles).
 
-        This ONLY affects what title is searched for on OMDb/TMDb/TVmaze.
+        This ONLY affects what title is searched for on OMDb/TMDb/TVmaze/Wikipedia.
         It does NOT modify the subtitle file content or timing in any way.
 
         Examples:

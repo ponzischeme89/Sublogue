@@ -25,6 +25,7 @@
     { value: 'omdb', label: 'OMDb' },
     { value: 'tmdb', label: 'TMDb' },
     { value: 'tvmaze', label: 'TVmaze' },
+    { value: 'wikipedia', label: 'Wikipedia' },
     { value: 'both', label: 'OMDb + TMDb' }
   ]
 

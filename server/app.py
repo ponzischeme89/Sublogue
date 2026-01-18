@@ -15,6 +15,7 @@ from core.config_manager import ConfigManager
 from core.omdb_client import OMDbClient
 from core.tmdb_client import TMDbClient
 from core.tvmaze_client import TVMazeClient
+from core.wikipedia_client import WikipediaClient
 from core.subtitle_processor import SubtitleProcessor, SubtitleFormatOptions, SUBLOGUE_TOKEN_PATTERN, SUBLOGUE_SENTINEL
 from core.keyword_stripper import get_stripper
 from core.file_scanner import FileScanner
@@ -36,6 +37,7 @@ db = DatabaseManager()
 omdb_client = None
 tmdb_client = None
 tvmaze_client = None
+wikipedia_client = None
 processor = None
 
 # In-memory scan state (still used for current session)
@@ -129,7 +131,7 @@ def start_scheduled_scan_worker():
 
 def initialize_clients():
     """Initialize OMDb, TMDb, TVmaze clients and processor with current API keys"""
-    global omdb_client, tmdb_client, tvmaze_client, processor
+    global omdb_client, tmdb_client, tvmaze_client, wikipedia_client, processor
 
     # Load OMDb API key
     omdb_key = _get_str_setting("omdb_api_key", "")
@@ -144,6 +146,7 @@ def initialize_clients():
     omdb_enabled = _get_bool_setting("omdb_enabled", False)
     tmdb_enabled = _get_bool_setting("tmdb_enabled", False)
     tvmaze_enabled = _get_bool_setting("tvmaze_enabled", False)
+    wikipedia_enabled = _get_bool_setting("wikipedia_enabled", False)
     preferred_source = _get_str_setting("preferred_source", "omdb")
 
     # Initialize clients with db_manager for usage tracking
@@ -166,12 +169,20 @@ def initialize_clients():
         tvmaze_client = None
         logger.info("TVmaze integration disabled")
 
+    if wikipedia_enabled:
+        wikipedia_client = WikipediaClient(db_manager=db)
+        logger.info("Wikipedia client initialized with usage tracking")
+    else:
+        wikipedia_client = None
+        logger.info("Wikipedia integration disabled")
+
     # Initialize processor with available clients
-    if omdb_client or tmdb_client or tvmaze_client:
+    if omdb_client or tmdb_client or tvmaze_client or wikipedia_client:
         processor = SubtitleProcessor(
             omdb_client,
             tmdb_client,
             tvmaze_client,
+            wikipedia_client,
             preferred_source=preferred_source,
         )
         logger.info("Processor initialized")
@@ -406,6 +417,8 @@ def get_settings():
         settings["tmdb_enabled"] = False
     if "tvmaze_enabled" not in settings:
         settings["tvmaze_enabled"] = False
+    if "wikipedia_enabled" not in settings:
+        settings["wikipedia_enabled"] = False
 
     # Subtitle formatting settings
     if "subtitle_title_bold" not in settings:
@@ -460,6 +473,8 @@ def update_settings():
             db.set_setting("tmdb_enabled", bool(data["tmdb_enabled"]))
         if "tvmaze_enabled" in data:
             db.set_setting("tvmaze_enabled", bool(data["tvmaze_enabled"]))
+        if "wikipedia_enabled" in data:
+            db.set_setting("wikipedia_enabled", bool(data["wikipedia_enabled"]))
 
         # Subtitle formatting settings
         if "subtitle_title_bold" in data:
@@ -989,7 +1004,7 @@ def clear_caches():
 
 @app.route('/api/search', methods=['POST'])
 def search_title():
-    """Search for title matches from OMDb/TMDb
+    """Search for title matches from OMDb/TMDb/Wikipedia
 
     Query params:
         query: The search query (required)
@@ -1007,7 +1022,7 @@ def search_title():
                 "error": "No search query provided"
             }), 400
 
-        if not omdb_client and not tmdb_client:
+        if not omdb_client and not tmdb_client and not wikipedia_client:
             return jsonify({
                 "success": False,
                 "error": "API not configured"
@@ -1017,6 +1032,26 @@ def search_title():
         language = data.get("language")
 
         results = []
+        if preferred_source == "wikipedia" and wikipedia_client:
+            try:
+                import asyncio
+
+                title, year = SubtitleProcessor.extract_title_and_year(query, strip_keywords=True)
+                results = asyncio.run(
+                    wikipedia_client.search_titles(
+                        title,
+                        year=year,
+                        is_series=False,
+                        max_results=5 if mode == "full" else 1,
+                    )
+                )
+                return jsonify({
+                    "success": True,
+                    "results": results
+                })
+            except Exception as e:
+                logger.error(f"Error searching Wikipedia: {e}")
+
         if preferred_source == "tmdb" and tmdb_client:
             try:
                 import aiohttp
@@ -1567,17 +1602,19 @@ def health_check():
     omdb_enabled = bool(db.get_setting("omdb_enabled", False))
     tmdb_enabled = bool(db.get_setting("tmdb_enabled", False))
     tvmaze_enabled = bool(db.get_setting("tvmaze_enabled", False))
+    wikipedia_enabled = bool(db.get_setting("wikipedia_enabled", False))
     omdb_configured = bool(db.get_setting("omdb_api_key") or db.get_setting("api_key"))
     tmdb_configured = bool(db.get_setting("tmdb_api_key"))
 
     return jsonify({
         "status": "ok",
-        "api_key_configured": (omdb_enabled and omdb_configured) or (tmdb_enabled and tmdb_configured) or tvmaze_enabled,
+        "api_key_configured": (omdb_enabled and omdb_configured) or (tmdb_enabled and tmdb_configured) or tvmaze_enabled or wikipedia_enabled,
         "omdb_configured": omdb_configured,
         "tmdb_configured": tmdb_configured,
         "omdb_enabled": omdb_enabled,
         "tmdb_enabled": tmdb_enabled,
-        "tvmaze_enabled": tvmaze_enabled
+        "tvmaze_enabled": tvmaze_enabled,
+        "wikipedia_enabled": wikipedia_enabled
     })
 
 
