@@ -117,6 +117,17 @@ networks:
 ```
 </details>
 
+## Timing And Insertion Logic
+Sublogue never shifts existing subtitle timing. It only inserts metadata blocks into safe gaps.
+
+| Decision | What Sublogue checks | Outcome |
+| --- | --- | --- |
+| Find insertion gap (start) | Time before the first dialogue subtitle (minus a 500ms safety buffer) | Uses that gap for intro blocks |
+| Find insertion gap (end) | Time after the last dialogue subtitle (plus a 500ms safety buffer) | Uses that gap for outro blocks |
+| Insufficient gap | No space to fit the intro/outro blocks | Skips insertion and reports “Insufficient Gap” |
+| Reading speed | Word count vs a 160 WPM target (min 1.2s, max 6.0s per block) | Splits plot into readable blocks |
+| Existing Sublogue blocks | Looks for `{SUBLOGUE}` markers or legacy signatures | Removes old blocks before inserting new ones |
+
 ## Integrations
 | Provider | Signup / API key | Rate limits (see provider for current limits) | Notes |
 | --- | --- | --- | --- |
