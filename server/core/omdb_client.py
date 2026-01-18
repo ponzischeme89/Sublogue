@@ -124,6 +124,35 @@ class OMDbClient:
         finally:
             self._inflight.pop(key, None)
 
+    async def fetch_summary_by_imdb_id(self, imdb_id: str) -> Optional[dict]:
+        """
+        Fetch summary from OMDb using a specific IMDb ID.
+
+        Args:
+            imdb_id: IMDb ID (e.g., tt1234567)
+        """
+        if not imdb_id:
+            return None
+
+        key = f"imdb:{imdb_id.lower()}"
+        if key in self._inflight:
+            logger.debug("Awaiting inflight OMDb request: %s", key)
+            return await self._inflight[key]
+
+        loop = asyncio.get_running_loop()
+        future = loop.create_future()
+        self._inflight[key] = future
+
+        try:
+            result = await self._fetch_summary_by_imdb_id_internal(imdb_id)
+            future.set_result(result)
+            return result
+        except Exception as e:
+            future.set_exception(e)
+            raise
+        finally:
+            self._inflight.pop(key, None)
+
     # -----------------------------
     # Internal fetch logic
     # -----------------------------
@@ -200,6 +229,47 @@ class OMDbClient:
                 return None
             except aiohttp.ClientError as e:
                 logger.error("OMDb network error for '%s': %s", title, e)
+                return None
+
+    async def _fetch_summary_by_imdb_id_internal(self, imdb_id: str) -> Optional[dict]:
+        logger.info("Fetching OMDb summary for IMDb ID: %s", imdb_id)
+
+        async with self.semaphore:
+            await self.rate_limiter.wait()
+
+            params = {
+                "apikey": self.api_key,
+                "i": imdb_id,
+                "plot": "short",
+            }
+
+            session = await self._get_session()
+            start = time.monotonic()
+
+            try:
+                async with session.get(self.BASE_URL, params=params) as resp:
+                    elapsed_ms = int((time.monotonic() - start) * 1000)
+
+                    if resp.status != 200:
+                        self._track(False, imdb_id, elapsed_ms)
+                        logger.error("OMDb HTTP %s for IMDb ID '%s'", resp.status, imdb_id)
+                        return None
+
+                    data = await resp.json()
+
+                    if data.get("Response") != "True":
+                        self._track(False, imdb_id, elapsed_ms)
+                        logger.warning("OMDb error for IMDb ID '%s': %s", imdb_id, data.get("Error"))
+                        return None
+
+                    self._track(True, imdb_id, elapsed_ms)
+                    return self._parse_response(data)
+
+            except asyncio.TimeoutError:
+                logger.error("OMDb timeout for IMDb ID '%s'", imdb_id)
+                return None
+            except aiohttp.ClientError as e:
+                logger.error("OMDb network error for IMDb ID '%s': %s", imdb_id, e)
                 return None
 
     # -----------------------------

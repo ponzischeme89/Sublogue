@@ -1206,7 +1206,24 @@ class SubtitleProcessor:
         # (Do metadata fetch BEFORE acquiring lock to minimize lock hold time)
         if title_override:
             logger.info("Using provided title override for %s: %s", file_path.name, title_override.get("title"))
-            movie = title_override
+            movie = dict(title_override)
+
+            # If extra fields are missing, try to enrich from OMDb using IMDb ID.
+            missing_fields = ["director", "actors", "released", "genre"]
+            has_missing = any(
+                not movie.get(field) or movie.get(field) == "N/A"
+                for field in missing_fields
+            )
+            imdb_id = movie.get("imdb_id") or movie.get("imdbID")
+            if has_missing and imdb_id and self.omdb_client:
+                try:
+                    enrichment = await self.omdb_client.fetch_summary_by_imdb_id(imdb_id)
+                    if enrichment:
+                        for field in missing_fields:
+                            if not movie.get(field) or movie.get(field) == "N/A":
+                                movie[field] = enrichment.get(field, movie.get(field))
+                except Exception as e:
+                    logger.warning("Failed to enrich metadata for %s: %s", imdb_id, e)
         else:
             raw_name = file_path.stem
             movie_name, year = self.extract_title_and_year(raw_name, strip_keywords=strip_keywords)

@@ -178,8 +178,10 @@
   }
 
   function handleAddPlotWithSearch(file, event) {
+    // Svelte Button dispatches a custom event; the native MouseEvent is in detail.
+    const nativeEvent = event?.detail ?? event;
     // Open dropdown for search
-    toggleSearchDropdown(file, event);
+    toggleSearchDropdown(file, nativeEvent);
   }
 
   function handleQuickAddPlot(file) {

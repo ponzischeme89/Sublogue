@@ -131,19 +131,19 @@ def initialize_clients():
     global omdb_client, tmdb_client, tvmaze_client, processor
 
     # Load OMDb API key
-    omdb_key = db.get_setting("omdb_api_key", "") or ""
+    omdb_key = _get_str_setting("omdb_api_key", "")
     if not omdb_key:
         # Fallback to legacy "api_key" setting
-        omdb_key = db.get_setting("api_key", "") or ""
+        omdb_key = _get_str_setting("api_key", "")
     if not omdb_key:
         omdb_key = config.get("api_key", "")
 
     # Load TMDb API key
-    tmdb_key = db.get_setting("tmdb_api_key", "")
-    omdb_enabled = db.get_setting("omdb_enabled", False)
-    tmdb_enabled = db.get_setting("tmdb_enabled", False)
-    tvmaze_enabled = db.get_setting("tvmaze_enabled", False)
-    preferred_source = db.get_setting("preferred_source", "omdb")
+    tmdb_key = _get_str_setting("tmdb_api_key", "")
+    omdb_enabled = _get_bool_setting("omdb_enabled", False)
+    tmdb_enabled = _get_bool_setting("tmdb_enabled", False)
+    tvmaze_enabled = _get_bool_setting("tvmaze_enabled", False)
+    preferred_source = _get_str_setting("preferred_source", "omdb")
 
     # Initialize clients with db_manager for usage tracking
     if omdb_enabled and omdb_key:
@@ -196,15 +196,28 @@ def migrate_settings():
         logger.error(f"Error migrating settings: {e}")
 
 
+def _get_bool_setting(key: str, default: bool) -> bool:
+    """Fetch a boolean setting with explicit casting for type safety."""
+    value = db.get_setting(key, default)
+    return bool(value)
+
+def _get_str_setting(key: str, default: str) -> str:
+    """Fetch a string setting with explicit casting for type safety."""
+    value = db.get_setting(key, default)
+    if value is None:
+        return default
+    return str(value)
+
+
 def get_format_options_from_settings() -> SubtitleFormatOptions:
     """Load subtitle formatting options from database settings."""
     return SubtitleFormatOptions(
-        title_bold=db.get_setting("subtitle_title_bold", True),
-        plot_italic=db.get_setting("subtitle_plot_italic", True),
-        show_director=db.get_setting("subtitle_show_director", False),
-        show_actors=db.get_setting("subtitle_show_actors", False),
-        show_released=db.get_setting("subtitle_show_released", False),
-        show_genre=db.get_setting("subtitle_show_genre", False),
+        title_bold=_get_bool_setting("subtitle_title_bold", True),
+        plot_italic=_get_bool_setting("subtitle_plot_italic", True),
+        show_director=_get_bool_setting("subtitle_show_director", False),
+        show_actors=_get_bool_setting("subtitle_show_actors", False),
+        show_released=_get_bool_setting("subtitle_show_released", False),
+        show_genre=_get_bool_setting("subtitle_show_genre", False),
     )
 
 
@@ -823,7 +836,11 @@ def search_title():
                                         "imdb_rating": data.get("imdbRating", "N/A"),
                                         "media_type": data.get("Type"),
                                         "poster": data.get("Poster"),
-                                        "imdb_id": data.get("imdbID")
+                                        "imdb_id": data.get("imdbID"),
+                                        "director": data.get("Director", "N/A"),
+                                        "actors": data.get("Actors", "N/A"),
+                                        "released": data.get("Released", "N/A"),
+                                        "genre": data.get("Genre", "N/A")
                                     }]
 
                             db.track_api_call(
@@ -869,43 +886,48 @@ def search_title():
                             if not search_results:
                                 return []
 
-                            # Second: get details for top result only (saves API calls)
-                            # Users can see basic info for others, click to load more if needed
-                            top_item = search_results[0]
-                            detail_params = {
-                                "apikey": omdb_client.api_key,
-                                "i": top_item.get("imdbID"),
-                                "plot": "short"
-                            }
-
+                            # Second: get details for each result so manual selections have full metadata
                             detailed_results = []
-                            async with session.get(omdb_client.BASE_URL, params=detail_params) as detail_resp:
-                                api_calls += 1
-                                if detail_resp.status == 200:
-                                    detail_data = await detail_resp.json()
-                                    if detail_data.get("Response") == "True":
-                                        detailed_results.append({
-                                            "title": detail_data.get("Title"),
-                                            "year": detail_data.get("Year"),
-                                            "plot": detail_data.get("Plot", "No plot available"),
-                                            "runtime": detail_data.get("Runtime", "N/A"),
-                                            "imdb_rating": detail_data.get("imdbRating", "N/A"),
-                                            "media_type": detail_data.get("Type"),
-                                            "poster": detail_data.get("Poster"),
-                                            "imdb_id": detail_data.get("imdbID")
-                                        })
-
-                            # Add remaining results with basic info (no extra API calls)
-                            for item in search_results[1:]:
+                            for item in search_results:
+                                detail_params = {
+                                    "apikey": omdb_client.api_key,
+                                    "i": item.get("imdbID"),
+                                    "plot": "short"
+                                }
+                                async with session.get(omdb_client.BASE_URL, params=detail_params) as detail_resp:
+                                    api_calls += 1
+                                    if detail_resp.status == 200:
+                                        detail_data = await detail_resp.json()
+                                        if detail_data.get("Response") == "True":
+                                            detailed_results.append({
+                                                "title": detail_data.get("Title"),
+                                                "year": detail_data.get("Year"),
+                                                "plot": detail_data.get("Plot", "No plot available"),
+                                                "runtime": detail_data.get("Runtime", "N/A"),
+                                                "imdb_rating": detail_data.get("imdbRating", "N/A"),
+                                                "media_type": detail_data.get("Type"),
+                                                "poster": detail_data.get("Poster"),
+                                                "imdb_id": detail_data.get("imdbID"),
+                                                "director": detail_data.get("Director", "N/A"),
+                                                "actors": detail_data.get("Actors", "N/A"),
+                                                "released": detail_data.get("Released", "N/A"),
+                                                "genre": detail_data.get("Genre", "N/A")
+                                            })
+                                            continue
+                                # Fallback to basic info if detail lookup fails
                                 detailed_results.append({
                                     "title": item.get("Title"),
                                     "year": item.get("Year"),
-                                    "plot": None,  # Not fetched yet
+                                    "plot": None,
                                     "runtime": None,
                                     "imdb_rating": None,
                                     "media_type": item.get("Type"),
                                     "poster": item.get("Poster"),
-                                    "imdb_id": item.get("imdbID")
+                                    "imdb_id": item.get("imdbID"),
+                                    "director": "N/A",
+                                    "actors": "N/A",
+                                    "released": "N/A",
+                                    "genre": "N/A"
                                 })
 
                             response_time_ms = int((time.time() - start_time) * 1000)
@@ -968,10 +990,10 @@ def process_files():
         format_options = get_format_options_from_settings()
 
         # Load strip_keywords setting (default True for better matching)
-        strip_keywords = db.get_setting("strip_keywords", True)
+        strip_keywords = _get_bool_setting("strip_keywords", True)
 
         # Load clean_subtitle_content setting (default True for ad removal)
-        clean_subtitle_content = db.get_setting("clean_subtitle_content", True)
+        clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
 
         # Create a processing run in database
         run_id = db.create_run(total_files=len(file_paths))
@@ -1106,10 +1128,10 @@ def process_batch():
             format_options = get_format_options_from_settings()
 
             # Load strip_keywords setting (default True for better matching)
-            strip_keywords = db.get_setting("strip_keywords", True)
+            strip_keywords = _get_bool_setting("strip_keywords", True)
 
             # Load clean_subtitle_content setting (default True for ad removal)
-            clean_subtitle_content = db.get_setting("clean_subtitle_content", True)
+            clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
 
             # Create a processing run
             run_id = db.create_run(total_files=total)
