@@ -6,7 +6,7 @@
 
 </div>
 
-Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadata from OMDb, TMDB, or TVMaze and automatically append plot summaries, runtimes, directors, and cast details to the start or end of your subtitles. 
+Sublogue is a lightweight open-source tool for enriching SRT files. Pull metadata from OMDb, TMDB, or TVMaze and automatically append plot summaries, runtimes, directors, and cast details to the start or end (are you crazy?) of your subtitles (.SRT files). 
 
 Additionally, Sublogue can clean junk out of your subtitles — automatically or on demand. Yes, even those “Downloaded from OpenSubtitles” lines that haunt every movie night..
 
