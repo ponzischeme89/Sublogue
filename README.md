@@ -30,7 +30,9 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 </div>
 
 ## Getting started
-To get started installing Sublogue, expand on your posion below. Personally, I recommend **Komodo**. It's great.
+To get started installing Sublogue, choose on your ☠️ below!
+
+Personally, I recommend **Komodo**. It's great.
 
 **Quick Start with Docker:**
 
