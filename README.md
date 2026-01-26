@@ -15,6 +15,7 @@ Why? Because if the cast list and IMDb/RT rating show up in the first minute, my
 ## Features
 - Insert plot summaries into existing .srt files without shifting timings
 - Fetch metadata (plot, runtime, director, cast, IMDb/RT ratings) using OMDb, TMDb, TVMaze and Wikipedia - add these integrations under Settings before scanning
+- Automatically strips OCR junk, music-only lines, timecodes, and other subtitle noise for a cleaner, more readable SRT.
 - Preserve original dialogue and timing with safe insertion logic while cleaning watermarks (YTS, OpenSubtitles, etc.)
 - Automation rules can run cleanup-only mode on schedules, or combined cleanup + metadata enrichment
 - Folder Rules to have seperate logic for different folders (for example TV shows could have runtime but not actors, etc)
