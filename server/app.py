@@ -479,6 +479,8 @@ def get_settings():
         settings["strip_keywords"] = True
     if "clean_subtitle_content" not in settings:
         settings["clean_subtitle_content"] = True
+    if "clean_subtitle_garbage" not in settings:
+        settings["clean_subtitle_garbage"] = False
     if "clean_subtitle_force_remove" not in settings:
         settings["clean_subtitle_force_remove"] = ["YTS", "OpenSubtitles"]
     if "omdb_enabled" not in settings:
@@ -537,6 +539,8 @@ def update_settings():
             db.set_setting("strip_keywords", bool(data["strip_keywords"]))
         if "clean_subtitle_content" in data:
             db.set_setting("clean_subtitle_content", bool(data["clean_subtitle_content"]))
+        if "clean_subtitle_garbage" in data:
+            db.set_setting("clean_subtitle_garbage", bool(data["clean_subtitle_garbage"]))
         if "clean_subtitle_force_remove" in data:
             db.set_setting(
                 "clean_subtitle_force_remove",
@@ -1534,6 +1538,57 @@ def search_title():
 
 # ============ PROCESSING ENDPOINTS ============
 
+@app.route('/api/clean/preview', methods=['POST'])
+def preview_clean():
+    """Preview cleaning changes for a subtitle file without writing."""
+    try:
+        data = request.json
+        file_path = data.get("file")
+
+        if not file_path:
+            return jsonify({
+                "success": False,
+                "error": "No file specified"
+            }), 400
+
+        clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
+        clean_subtitle_garbage = _get_bool_setting("clean_subtitle_garbage", False)
+
+        if not clean_subtitle_content and not clean_subtitle_garbage:
+            return jsonify({
+                "success": False,
+                "error": "Cleaning is disabled in settings"
+            }), 400
+
+        processor_instance = processor or SubtitleProcessor(
+            omdb_client,
+            tmdb_client,
+            tvmaze_client,
+            wikipedia_client,
+            preferred_source=_get_str_setting("preferred_source", "omdb"),
+        )
+
+        preview = processor_instance.preview_clean_file(
+            file_path,
+            clean_subtitle_content=clean_subtitle_content,
+            clean_subtitle_garbage=clean_subtitle_garbage,
+        )
+
+        if not preview.get("success"):
+            return jsonify(preview), 400
+
+        return jsonify({
+            "success": True,
+            "preview": preview
+        })
+
+    except Exception as e:
+        logger.error(f"Preview clean error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 @app.route('/api/process', methods=['POST'])
 def process_files():
     """Process selected files to add plot summaries"""
@@ -1575,6 +1630,7 @@ def process_files():
 
         # Load clean_subtitle_content setting (default True for ad removal)
         clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
+        clean_subtitle_garbage = _get_bool_setting("clean_subtitle_garbage", False)
 
         # Load default insertion position and preferred source
         default_insertion_position = _get_str_setting("insertion_position", "start")
@@ -1603,6 +1659,7 @@ def process_files():
                     result = processor_instance.clean_file(
                         file_path,
                         clean_subtitle_content=clean_subtitle_content,
+                        clean_subtitle_garbage=clean_subtitle_garbage,
                     )
                     result["clean_only"] = True
                 else:
@@ -1614,6 +1671,7 @@ def process_files():
                         format_options=effective_format,
                         strip_keywords=strip_keywords,
                         clean_subtitle_content=clean_subtitle_content,
+                        clean_subtitle_garbage=clean_subtitle_garbage,
                         insertion_position=insertion_position or default_insertion_position,
                         preferred_source=preferred_source or default_preferred_source,
                         language=language,
@@ -1742,6 +1800,7 @@ def process_batch():
 
             # Load clean_subtitle_content setting (default True for ad removal)
             clean_subtitle_content = _get_bool_setting("clean_subtitle_content", True)
+            clean_subtitle_garbage = _get_bool_setting("clean_subtitle_garbage", False)
 
             default_insertion_position = _get_str_setting("insertion_position", "start")
             default_preferred_source = _get_str_setting("preferred_source", "omdb")
@@ -1776,6 +1835,7 @@ def process_batch():
                         format_options=effective_format,
                         strip_keywords=strip_keywords,
                         clean_subtitle_content=clean_subtitle_content,
+                        clean_subtitle_garbage=clean_subtitle_garbage,
                         insertion_position=insertion_position or default_insertion_position,
                         preferred_source=preferred_source or default_preferred_source,
                         language=language,
