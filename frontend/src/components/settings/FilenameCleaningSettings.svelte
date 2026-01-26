@@ -7,6 +7,7 @@
 
   let stripKeywords = settings.strip_keywords !== false;
   let cleanSubtitleContent = settings.clean_subtitle_content !== false;
+  let cleanSubtitleGarbage = settings.clean_subtitle_garbage === true;
   let forceRemoveKeywords = Array.isArray(settings.clean_subtitle_force_remove)
     ? settings.clean_subtitle_force_remove.join(", ")
     : settings.clean_subtitle_force_remove || "YTS, OpenSubtitles";
@@ -26,6 +27,12 @@
     { before: "Hello there. www.YTS.mx", after: "Hello there." },
     { before: "Subtitles by OpenSubtitles", after: "(removed)" },
     { before: "Downloaded from RARBG", after: "(removed)" },
+  ];
+
+  const garbageExamples = [
+    { before: "♪♪", after: "(removed)" },
+    { before: "00:01:23,456 --> 00:01:25,000", after: "(removed)" },
+    { before: "WE HAVE TO GO!\nWE HAVE TO GO!", after: "WE HAVE TO GO!" },
   ];
 
   // Keywords that get stripped from filenames
@@ -56,6 +63,7 @@
     onSave({
       strip_keywords: stripKeywords,
       clean_subtitle_content: cleanSubtitleContent,
+      clean_subtitle_garbage: cleanSubtitleGarbage,
       clean_subtitle_force_remove: forceRemoveKeywords
         .split(/[\n,]+/)
         .map((entry) => entry.trim())
@@ -168,6 +176,53 @@
         </span>
       </label>
     </div>
+
+    <div class="p-5 bg-bg-secondary border border-border rounded-xl mb-5">
+      <label class="flex items-start justify-between gap-4 rounded-xl border border-border bg-bg-secondary/40 px-4 py-3">
+        <div class="flex-1">
+          <div class="text-[14px] font-medium mb-1">Remove OCR Garbage</div>
+          <div class="text-[12px] text-text-tertiary leading-relaxed">
+            Strip music-only lines (♪♪), embedded timecodes, and duplicate OCR
+            lines inside a block. Can be enabled without ad removal.
+          </div>
+        </div>
+        <span class="relative mt-0.5 inline-flex items-center">
+          <input type="checkbox" bind:checked={cleanSubtitleGarbage} class="sr-only peer" />
+          <span class="h-6 w-11 rounded-full border border-border bg-bg-card transition-colors peer-checked:bg-accent peer-checked:border-accent/60"></span>
+          <span class="absolute left-0.5 h-5 w-5 rounded-full bg-text-tertiary transition-transform peer-checked:translate-x-5 peer-checked:bg-bg-primary"></span>
+        </span>
+      </label>
+    </div>
+
+    {#if cleanSubtitleGarbage}
+      <div class="bg-bg-card border border-border rounded-xl overflow-hidden mb-5">
+        <div class="px-4 py-2.5 border-b border-border bg-bg-secondary">
+          <span
+            class="text-[11px] font-medium text-text-secondary uppercase tracking-wide"
+            >OCR Garbage Examples</span
+          >
+        </div>
+        <div class="divide-y divide-border">
+          {#each garbageExamples as example}
+            <div class="px-4 py-2.5 flex items-center gap-3">
+              <div class="flex-1 min-w-0">
+                <code class="text-[11px] text-text-tertiary break-all"
+                  >{example.before}</code
+                >
+              </div>
+              <ArrowRight class="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
+              <div class="flex-shrink-0">
+                <code
+                  class="text-[11px] {example.after === '(removed)'
+                    ? 'text-red-400'
+                    : 'text-green-400'} font-medium">{example.after}</code
+                >
+              </div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
 
     <!-- Collapsible Details -->
     {#if cleanSubtitleContent}

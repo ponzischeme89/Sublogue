@@ -485,6 +485,18 @@ export async function clearAllSuggestedMatches() {
   })
 }
 
+/**
+ * POST /api/clean/preview - Preview cleaning changes
+ * Body: { file: string }
+ * Returns: { success, preview }
+ */
+export async function previewClean(file) {
+  return apiFetch('/clean/preview', {
+    method: 'POST',
+    body: JSON.stringify({ file })
+  })
+}
+
 // ============ MAINTENANCE API ============
 
 /**
