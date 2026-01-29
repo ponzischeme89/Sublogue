@@ -172,7 +172,7 @@
         class={`flex items-center px-3 py-2 text-xs ${collapsed ? "justify-center" : "justify-between"}`}
       >
         {#if !collapsed}
-          <Badge className="text-text-secondary">Version: v1.1.0</Badge>
+          <Badge className="text-text-secondary">Version: v1.1.1</Badge>
         {:else}
           <Badge className="text-text-secondary">v</Badge>
         {/if}
