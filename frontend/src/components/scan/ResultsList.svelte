@@ -15,6 +15,7 @@
     searchTitle,
     saveSuggestedMatches,
     processBatch,
+    previewClean,
   } from "../../lib/api.js";
 
   const dispatch = createEventDispatcher();
@@ -68,6 +69,11 @@
 
   let showPreview = false;
   let previewFile = null;
+  let showCleanPreview = false;
+  let cleanPreviewFile = null;
+  let cleanPreviewData = null;
+  let cleanPreviewLoading = false;
+  let cleanPreviewError = null;
   let showTitleSelector = false;
   let titleSelectorFile = null;
   let searchResults = [];
@@ -759,6 +765,30 @@
     previewFile = null;
   }
 
+  async function openCleanPreview(file) {
+    cleanPreviewFile = file;
+    showCleanPreview = true;
+    cleanPreviewLoading = true;
+    cleanPreviewError = null;
+    cleanPreviewData = null;
+
+    try {
+      const response = await previewClean(file.path);
+      cleanPreviewData = response.preview;
+    } catch (err) {
+      cleanPreviewError = err?.message || "Failed to load preview";
+    } finally {
+      cleanPreviewLoading = false;
+    }
+  }
+
+  function closeCleanPreview() {
+    showCleanPreview = false;
+    cleanPreviewFile = null;
+    cleanPreviewData = null;
+    cleanPreviewError = null;
+  }
+
   function getMediaType(file) {
     return file.media_type || "N/A";
   }
@@ -1261,6 +1291,13 @@
                     </TableCell>
                     <TableCell className="w-64">
                       <div class="flex items-center justify-end gap-2">
+                        <Button
+                          on:click={() => openCleanPreview(file)}
+                          size="sm"
+                          className="bg-bg-secondary text-text-secondary border border-border hover:text-white"
+                        >
+                          Preview
+                        </Button>
                         <span class="text-[11px] text-text-tertiary">
                           Clean only
                         </span>
@@ -1361,6 +1398,13 @@
                     </TableCell>
                     <TableCell className="w-64">
                       <div class="flex items-center justify-end gap-2">
+                        <Button
+                          on:click={() => openCleanPreview(file)}
+                          size="sm"
+                          className="bg-bg-secondary text-text-secondary border border-border hover:text-white"
+                        >
+                          Preview
+                        </Button>
                         <span class="text-[11px] text-text-tertiary">
                           Clean only
                         </span>
@@ -2308,6 +2352,104 @@
           {/if}
         </div>
       </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Clean Preview Modal -->
+{#if showCleanPreview && cleanPreviewFile}
+  <div
+    class="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4"
+    on:click={closeCleanPreview}
+    role="button"
+    tabindex="-1"
+    on:keydown={(e) => e.key === "Escape" && closeCleanPreview()}
+  >
+    <div
+      class="bg-bg-card border border-border rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+      on:click|stopPropagation
+      role="dialog"
+      tabindex="-1"
+      on:keydown
+    >
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex-1">
+          <h3 class="text-lg font-medium mb-1">Clean Preview</h3>
+          <p class="text-sm text-text-secondary font-mono">
+            {cleanPreviewFile.name}
+          </p>
+        </div>
+        <button
+          on:click={closeCleanPreview}
+          class="text-text-secondary hover:text-white transition-colors"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {#if cleanPreviewLoading}
+        <div class="py-16 text-center text-text-tertiary text-sm">
+          Building preview…
+        </div>
+      {:else if cleanPreviewError}
+        <div class="py-12 text-center text-red-400 text-sm">
+          {cleanPreviewError}
+        </div>
+      {:else if cleanPreviewData}
+        <div class="space-y-5">
+          <div class="flex items-center justify-between text-xs text-text-tertiary uppercase tracking-wide">
+            <span>Summary</span>
+            <span>
+              {cleanPreviewData.removed_blocks} removed ·
+              {cleanPreviewData.modified_blocks} modified
+            </span>
+          </div>
+
+          {#if cleanPreviewData.total_changed_blocks === 0}
+            <div class="text-sm text-text-tertiary">
+              No changes detected.
+            </div>
+          {:else}
+            <div class="space-y-3">
+              {#each cleanPreviewData.changes as change}
+                <div class="border border-border rounded-xl p-4 bg-bg-primary/40">
+                  <div class="text-[11px] text-text-tertiary uppercase tracking-wide mb-3">
+                    {change.type} · {change.timecode}
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 text-[11px]">
+                    <div class="text-text-secondary">Before</div>
+                    <div class="text-text-secondary">After</div>
+                    <pre
+                      class="whitespace-pre-wrap text-text-tertiary bg-bg-secondary/40 border border-border rounded-lg p-2 min-h-[48px]"
+                    >{change.before || "(removed)"}</pre>
+                    <pre
+                      class="whitespace-pre-wrap text-text-secondary bg-bg-secondary/40 border border-border rounded-lg p-2 min-h-[48px]"
+                    >{change.after || "(removed)"}</pre>
+                  </div>
+                </div>
+              {/each}
+            </div>
+
+            {#if cleanPreviewData.changes_truncated}
+              <div class="text-[11px] text-text-tertiary">
+                Preview truncated. Run clean to apply all changes.
+              </div>
+            {/if}
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 {/if}

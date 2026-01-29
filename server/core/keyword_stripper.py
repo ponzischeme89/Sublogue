@@ -254,6 +254,13 @@ class KeywordStripper:
     ]
 
     # -----------------------------
+    # OCR / GARBAGE LINE DETECTION
+    # -----------------------------
+
+    GARBAGE_MUSIC_LINE = r"^[\s\[\]\(\)\{\}_\-\.\~\*]*(?:[♪♫♬♩]+)[\s\[\]\(\)\{\}_\-\.\~\*]*$"
+    GARBAGE_TIMECODE = r"\d{1,2}:\d{2}:\d{2}[,\.]\d{3}"
+
+    # -----------------------------
     # COMPILED REGEX CACHE
     # -----------------------------
 
@@ -296,6 +303,8 @@ class KeywordStripper:
             "subtitle_force_remove": [
                 re.compile(p, re.IGNORECASE) for p in combined_force_remove
             ],
+            "garbage_music_line": re.compile(cls.GARBAGE_MUSIC_LINE),
+            "garbage_timecode": re.compile(cls.GARBAGE_TIMECODE),
         }
 
         return cls._compiled
@@ -430,26 +439,74 @@ class KeywordStripper:
         Returns:
             Cleaned text with ads removed, or empty string if nothing remains
         """
+        return self._clean_subtitle_text(text, remove_watermarks=True, remove_garbage=False)
+
+    def clean_subtitle_text_with_options(
+        self,
+        text: str,
+        remove_watermarks: bool = True,
+        remove_garbage: bool = False,
+    ) -> str:
+        return self._clean_subtitle_text(
+            text,
+            remove_watermarks=remove_watermarks,
+            remove_garbage=remove_garbage,
+        )
+
+    def _is_timecode_line(self, line: str) -> bool:
+        rx = self._compile()
+        if not rx["garbage_timecode"].search(line):
+            return False
+        stripped = rx["garbage_timecode"].sub("", line)
+        stripped = re.sub(r"[\s0-9:\-–>,\.\[\]]+", "", stripped)
+        return stripped == ""
+
+    def _is_music_line(self, line: str) -> bool:
+        rx = self._compile()
+        return bool(rx["garbage_music_line"].match(line.strip()))
+
+    def _normalize_line(self, line: str) -> str:
+        return re.sub(r"\s+", " ", line.strip()).lower()
+
+    def _clean_subtitle_text(
+        self,
+        text: str,
+        remove_watermarks: bool = True,
+        remove_garbage: bool = False,
+    ) -> str:
         rx = self._compile()
         original = text
 
         # Process line by line to handle multi-line subtitles
         lines = text.split('\n')
         cleaned_lines = []
+        seen_lines = set()
 
         for line in lines:
+            if remove_garbage:
+                if self._is_music_line(line) or self._is_timecode_line(line):
+                    continue
+
             cleaned_line = line
 
             # Remove watermark patterns
-            for pattern in rx["subtitle_watermarks"]:
-                cleaned_line = pattern.sub("", cleaned_line)
+            if remove_watermarks:
+                for pattern in rx["subtitle_watermarks"]:
+                    cleaned_line = pattern.sub("", cleaned_line)
 
             # Clean up resulting whitespace
             cleaned_line = re.sub(r'\s+', ' ', cleaned_line).strip()
 
-            # Only keep lines that have content after cleaning
-            if cleaned_line:
-                cleaned_lines.append(cleaned_line)
+            if not cleaned_line:
+                continue
+
+            if remove_garbage:
+                normalized = self._normalize_line(cleaned_line)
+                if normalized and normalized in seen_lines:
+                    continue
+                seen_lines.add(normalized)
+
+            cleaned_lines.append(cleaned_line)
 
         result = '\n'.join(cleaned_lines)
 
@@ -463,7 +520,12 @@ class KeywordStripper:
 
         return result
 
-    def clean_subtitle_blocks(self, blocks: List[dict]) -> List[dict]:
+    def clean_subtitle_blocks(
+        self,
+        blocks: List[dict],
+        remove_watermarks: bool = True,
+        remove_garbage: bool = False,
+    ) -> List[dict]:
         """
         Clean a list of subtitle blocks, removing ads and watermarks.
 
@@ -485,13 +547,17 @@ class KeywordStripper:
             text = block.get("text", "")
 
             # Check if entire block should be removed
-            if self.should_remove_subtitle_block(text):
+            if remove_watermarks and self.should_remove_subtitle_block(text):
                 removed_count += 1
                 logger.debug("Removing ad block: '%s'", text[:50])
                 continue
 
             # Clean the text
-            cleaned_text = self.clean_subtitle_text(text)
+            cleaned_text = self._clean_subtitle_text(
+                text,
+                remove_watermarks=remove_watermarks,
+                remove_garbage=remove_garbage,
+            )
 
             # Skip if cleaning resulted in empty text
             if not cleaned_text.strip():
@@ -526,6 +592,27 @@ class KeywordStripper:
                 detected.append(keyword)
         return detected
 
+    def detect_garbage_labels(self, block_texts: List[str]) -> List[str]:
+        """Detect OCR/garbage patterns in subtitle blocks."""
+        labels = set()
+        for text in block_texts:
+            lines = text.split("\n")
+            seen = set()
+            for line in lines:
+                if self._is_music_line(line):
+                    labels.add("Music-only lines")
+                if self._is_timecode_line(line):
+                    labels.add("OCR timecodes")
+                normalized = self._normalize_line(line)
+                if normalized:
+                    if normalized in seen:
+                        labels.add("Duplicate lines")
+                    else:
+                        seen.add(normalized)
+            if len(labels) >= 3:
+                break
+        return sorted(labels)
+
     def set_force_remove_keywords(self, keywords: List[str]) -> None:
         """Set custom force-remove keywords and refresh regex cache."""
         type(self)._custom_force_remove_keywords = [
@@ -556,9 +643,17 @@ def clean_filename(filename: str, preserve_year: bool = True) -> dict:
     return get_stripper().clean_filename(filename, preserve_year)
 
 
-def clean_subtitle_content(text: str) -> str:
-    """Clean watermarks and ads from subtitle text."""
-    return get_stripper().clean_subtitle_text(text)
+def clean_subtitle_content(
+    text: str,
+    remove_watermarks: bool = True,
+    remove_garbage: bool = False,
+) -> str:
+    """Clean watermarks/ads and optional OCR garbage from subtitle text."""
+    return get_stripper().clean_subtitle_text_with_options(
+        text,
+        remove_watermarks=remove_watermarks,
+        remove_garbage=remove_garbage,
+    )
 
 
 def should_remove_subtitle(text: str) -> bool:
