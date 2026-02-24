@@ -163,8 +163,3 @@ Sublogue never shifts existing subtitle timing. It only inserts metadata blocks 
 - [ ] Offline caching of recent metadata lookups
 - [ ] Per-scan analytics: success/fail counts, rate-limit warnings
 - [ ] CLI mode for batch operations
-
-## Support
-- Help spread the word about Sublogue by telling your friends about this repo
-- Give the repo a star (This really helps)
-- Check out my other project, which is an open source renamer tool (with a very poor naming choice, but i'll likely change this in future) 
