@@ -21,6 +21,8 @@
   let showForm = false;
   let dryRunByRule = {};
   let running = {};
+  // Last run result per rule id: { files_scanned, files_modified, removed_lines, dry_run, errors }
+  let lastRunResult = {};
 
   async function loadRules() {
     loading = true;
@@ -108,9 +110,11 @@
         rule.id,
         dryRunByRule[rule.id] === true,
       );
+      lastRunResult[rule.id] = result;
+      lastRunResult = { ...lastRunResult };
       const label = result.dry_run ? "Dry run" : "Run";
       addToast({
-        message: `${label} complete. ${result.files_modified}/${result.files_scanned} modified.`,
+        message: `${label} complete. ${result.files_modified}/${result.files_scanned} modified, ${result.removed_lines} lines removed.`,
         tone: "success",
       });
     } catch (err) {
@@ -121,6 +125,21 @@
     } finally {
       running[rule.id] = false;
       running = { ...running };
+    }
+  }
+
+  function formatNextRun(isoString) {
+    if (!isoString) return null;
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return null;
     }
   }
 </script>
@@ -198,9 +217,15 @@
                 Schedule: <span class="font-mono">{rule.schedule}</span>
               </div>
               <div class="text-[12px] text-text-tertiary">
-                Targets: {rule.target_folders.length} folder
-                {rule.target_folders.length === 1 ? "" : "s"}
+                Targets: {rule.target_folders.length} folder{rule.target_folders.length === 1 ? "" : "s"}
               </div>
+              {#if rule.next_run_at && formatNextRun(rule.next_run_at)}
+                <div class="text-[11px] text-text-tertiary">
+                  Next run: <span class="text-text-secondary">{formatNextRun(rule.next_run_at)}</span>
+                </div>
+              {:else if rule.enabled}
+                <div class="text-[11px] text-text-tertiary">Next run: not scheduled</div>
+              {/if}
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -272,6 +297,26 @@
               <Play class="h-4 w-4" />
               {running[rule.id] ? "Running..." : "Run now"}
             </Button>
+
+            {#if lastRunResult[rule.id]}
+              {@const res = lastRunResult[rule.id]}
+              <div class="mt-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[11px] text-text-tertiary space-y-1">
+                <div class="font-medium text-text-secondary">
+                  {res.dry_run ? "Dry run" : "Run"} result
+                </div>
+                <div>
+                  {res.files_modified} / {res.files_scanned} files modified &middot; {res.removed_lines} lines removed
+                </div>
+                {#if res.errors && res.errors.length > 0}
+                  <div class="mt-1 space-y-0.5">
+                    <div class="text-red-400">{res.errors.length} error{res.errors.length === 1 ? "" : "s"}:</div>
+                    {#each res.errors as err}
+                      <div class="font-mono text-red-300 truncate" title={err}>{err}</div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         </div>
       {/each}

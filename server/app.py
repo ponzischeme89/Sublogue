@@ -595,6 +595,16 @@ def update_settings():
 def get_automation_rules():
     try:
         rules = db.get_automation_rules()
+
+        # Annotate each rule with its next scheduled run time when the engine is up.
+        if automation_engine is not None:
+            next_run_times = automation_engine.get_next_run_times()
+            for rule in rules:
+                rule["next_run_at"] = next_run_times.get(rule["id"])
+        else:
+            for rule in rules:
+                rule["next_run_at"] = None
+
         return jsonify({
             "success": True,
             "rules": rules
@@ -733,10 +743,31 @@ def run_automation_rule(rule_id):
         engine = _ensure_automation_engine()
         result = engine.run_rule_now(rule_id, dry_run=dry_run)
         if not result.get("success"):
-            return jsonify(result), 404
+            # Rule not found vs execution failure — surface the right status code.
+            error = result.get("error", "")
+            status = 404 if "not found" in error.lower() else 500
+            return jsonify(result), status
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error running automation rule: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/automation/logs', methods=['GET'])
+def get_automation_logs():
+    try:
+        rule_id = request.args.get('rule_id') or None
+        limit = request.args.get('limit', 100, type=int)
+        logs = db.get_automation_logs(rule_id=rule_id, limit=limit)
+        return jsonify({
+            "success": True,
+            "logs": logs
+        })
+    except Exception as e:
+        logger.error(f"Error fetching automation logs: {e}")
         return jsonify({
             "success": False,
             "error": str(e)

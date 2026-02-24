@@ -14,13 +14,24 @@
     ? [...rule.target_folders]
     : ["/media/movies"];
 
-  $: if (rule) {
-    name = rule.name || "";
-    schedule = rule.schedule || "0 3 * * SUN";
-    enabled = rule.enabled ?? true;
-    patterns = rule.patterns ? [...rule.patterns] : [];
-    targetFolders = rule.target_folders ? [...rule.target_folders] : [];
+  // Re-sync form whenever the incoming rule prop changes (edit ↔ create toggle).
+  $: {
+    if (rule) {
+      name = rule.name || "";
+      schedule = rule.schedule || "0 3 * * SUN";
+      enabled = rule.enabled ?? true;
+      patterns = rule.patterns ? [...rule.patterns] : [];
+      targetFolders = rule.target_folders ? [...rule.target_folders] : [];
+    } else {
+      name = "";
+      schedule = "0 3 * * SUN";
+      enabled = true;
+      patterns = ["YTS", "YIFY"];
+      targetFolders = ["/media/movies"];
+    }
   }
+
+  let formError = "";
 
   function addPattern() {
     patterns = [...patterns, ""];
@@ -49,12 +60,25 @@
   }
 
   function handleSubmit() {
+    formError = "";
+    const trimmedName = name.trim();
+    const trimmedSchedule = schedule.trim();
+
+    if (!trimmedName) {
+      formError = "Rule name is required.";
+      return;
+    }
+    if (!trimmedSchedule) {
+      formError = "Schedule is required.";
+      return;
+    }
+
     const cleanPatterns = patterns.map((p) => p.trim()).filter(Boolean);
     const cleanFolders = targetFolders.map((f) => f.trim()).filter(Boolean);
 
     onSave({
-      name: name.trim(),
-      schedule: schedule.trim(),
+      name: trimmedName,
+      schedule: trimmedSchedule,
       enabled,
       patterns: cleanPatterns,
       target_folders: cleanFolders,
@@ -199,6 +223,10 @@
       {/each}
     </div>
   </div>
+
+  {#if formError}
+    <p class="text-[12px] text-red-400">{formError}</p>
+  {/if}
 
   <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
     <Button

@@ -451,6 +451,17 @@ export async function runAutomationRule(ruleId, dryRun = false) {
   })
 }
 
+/**
+ * GET /api/automation/logs - Get automation run logs
+ * Query params: rule_id (optional), limit (default 100)
+ * Returns: { success, logs: [...] }
+ */
+export async function getAutomationLogs(ruleId = null, limit = 100) {
+  const params = new URLSearchParams({ limit })
+  if (ruleId) params.set('rule_id', ruleId)
+  return apiFetch(`/automation/logs?${params}`)
+}
+
 // ============ SUGGESTED MATCHES API ============
 
 /**

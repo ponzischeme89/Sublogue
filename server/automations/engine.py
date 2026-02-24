@@ -35,7 +35,8 @@ class AutomationEngine:
             logger.info("Starting automation scheduler...")
             self._scheduler.start()
             self._started = True
-            self.reload_rules()
+            # Call the lock-free variant directly — we already hold self._lock.
+            self._reload_rules_unlocked()
             logger.info("Automation scheduler successfully started.")
 
     def shutdown(self):
@@ -53,24 +54,40 @@ class AutomationEngine:
     # RULE MANAGEMENT
     # ------------------------------------------------------------------
     def reload_rules(self):
-        """Reload all automation rules from storage."""
+        """Reload all automation rules from storage (thread-safe)."""
         logger.info("Reloading automation rules from database...")
-
         with self._lock:
-            self._scheduler.remove_all_jobs()
-            logger.debug("Cleared all scheduled jobs.")
+            self._reload_rules_unlocked()
 
-            rules = self._load_rules()
-            logger.info("Loaded %d automation rules.", len(rules))
+    def _reload_rules_unlocked(self):
+        """Reload rules without acquiring the lock. Caller must hold self._lock."""
+        self._scheduler.remove_all_jobs()
+        logger.debug("Cleared all scheduled jobs.")
 
-            for rule in rules:
-                logger.debug("Evaluating rule %s (enabled=%s, schedule=%s)", rule.id, rule.enabled, rule.schedule)
+        rules = self._load_rules()
+        logger.info("Loaded %d automation rules.", len(rules))
 
-                if not rule.enabled:
-                    logger.info("Rule %s is disabled — skipping scheduling.", rule.id)
-                    continue
+        for rule in rules:
+            logger.debug("Evaluating rule %s (enabled=%s, schedule=%s)", rule.id, rule.enabled, rule.schedule)
 
-                self._schedule_rule(rule)
+            if not rule.enabled:
+                logger.info("Rule %s is disabled — skipping scheduling.", rule.id)
+                continue
+
+            self._schedule_rule(rule)
+
+    def get_next_run_times(self) -> Dict[str, Optional[str]]:
+        """Return mapping of rule_id → ISO next run time (or None if not scheduled)."""
+        result: Dict[str, Optional[str]] = {}
+        try:
+            for job in self._scheduler.get_jobs():
+                if job.id.startswith("automation:"):
+                    rule_id = job.id[len("automation:"):]
+                    nrt = job.next_run_time
+                    result[rule_id] = nrt.isoformat() if nrt else None
+        except Exception as e:
+            logger.warning("Could not retrieve next run times: %s", e)
+        return result
 
     def run_rule_now(self, rule_id: str, dry_run: bool = False) -> dict:
         logger.info("Manual execution requested for rule %s (dry_run=%s)", rule_id, dry_run)

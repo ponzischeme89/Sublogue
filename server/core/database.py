@@ -1173,6 +1173,30 @@ class DatabaseManager:
         finally:
             session.close()
 
+    def get_automation_logs(self, rule_id=None, limit=100):
+        """Get automation log entries, optionally filtered by rule_id"""
+        session = self.get_session()
+        try:
+            query = session.query(AutomationLog).order_by(AutomationLog.run_at.desc())
+            if rule_id:
+                query = query.filter(AutomationLog.rule_id == rule_id)
+            logs = query.limit(limit).all()
+            return [
+                {
+                    "id": log.id,
+                    "rule_id": log.rule_id,
+                    "file_path": log.file_path,
+                    "modified": log.modified,
+                    "removed_lines": log.removed_lines,
+                    "dry_run": log.dry_run,
+                    "error_message": log.error_message,
+                    "run_at": log.run_at.isoformat() if log.run_at else None,
+                }
+                for log in logs
+            ]
+        finally:
+            session.close()
+
     # ============ MAINTENANCE OPERATIONS ============
 
     def clear_settings(self, keep_api_keys=False):
