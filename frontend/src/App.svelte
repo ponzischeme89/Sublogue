@@ -9,7 +9,7 @@
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import LibraryPanel from "./components/library/LibraryPanel.svelte";
   import AutomationList from "./routes/automation/AutomationList.svelte";
-  import { Menu } from "lucide-svelte";
+  import { Menu, AlertTriangle, AlertCircle } from "lucide-svelte";
   import ToastHost from "./components/ToastHost.svelte";
   import { healthCheck } from "./lib/api.js";
   import { currentTheme, themes } from "./lib/themeStore.js";
@@ -124,7 +124,7 @@
 >
   {#if isMobile && sidebarOpen}
     <div
-      class="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
       on:click={() => (sidebarOpen = false)}
       aria-hidden="true"
     ></div>
@@ -139,39 +139,38 @@
   />
   <Sidebar.Inset>
     <!-- Main Content -->
-    <main class="flex-1">
+    <main class="flex-1 min-h-0">
       {#if isMobile && !sidebarOpen}
-        <div class="px-4 sm:px-6 md:px-8 pt-4">
+        <div class="px-4 pt-4">
           <Button
             variant="outline"
             size="sm"
-            className="border-white/15 text-text-secondary hover:bg-white/10"
+            className="gap-2"
             on:click={() => (sidebarOpen = true)}
             aria-label="Show sidebar"
           >
-            <Menu class="h-4 w-4" />
+            <Menu class="h-3.5 w-3.5" />
             Menu
           </Button>
         </div>
       {/if}
+
+      <!-- Status banners -->
       {#if !apiReachable}
-        <div class="border-b border-red-500/20 bg-red-500/10">
-          <div class="px-6 md:px-8 py-3">
-            <p class="text-[13px] text-red-200">{apiErrorMessage}</p>
-          </div>
+        <div class="mx-4 sm:mx-6 md:mx-8 mt-4 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3">
+          <AlertCircle class="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+          <p class="text-[13px] text-red-300 leading-relaxed">{apiErrorMessage}</p>
         </div>
       {:else if !apiConfigured && currentView === "scanner"}
-        <div class="border-b border-yellow-500/10 bg-yellow-500/5">
-          <div class="px-6 md:px-8 py-3">
-            <p class="text-[14px] text-red-100">
-              Configure a metadata source in Settings > Integrations to get
-              started
-            </p>
-          </div>
+        <div class="mx-4 sm:mx-6 md:mx-8 mt-4 flex items-start gap-3 rounded-xl border border-yellow-500/15 bg-yellow-500/6 px-4 py-3">
+          <AlertTriangle class="h-4 w-4 text-yellow-400 mt-0.5 shrink-0" />
+          <p class="text-[13px] text-yellow-200/80 leading-relaxed">
+            Configure a metadata source in Settings &rsaquo; Integrations to get started
+          </p>
         </div>
       {/if}
 
-      <div class="px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10">
+      <div class="px-4 sm:px-6 md:px-8 py-7 sm:py-9 md:py-10">
         {#if currentView === "settings"}
           <SettingsPanel />
         {:else if currentView === "history"}

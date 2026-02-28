@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,22 +6,23 @@
 
 @layer base {
   :root {
-    /* Default OLED theme */
-    --bg-primary: #000000;
-    --bg-secondary: #050505;
-    --bg-card: #0a0a0a;
-    --bg-hover: #141414;
-    --text-primary: #ffffff;
-    --text-secondary: #999999;
-    --text-tertiary: #666666;
-    --border: rgba(255, 255, 255, 0.06);
-    --accent: #3b82f6;
-    --focus-ring: rgba(255, 255, 255, 0.25);
+    /* Default Midnight theme (replaces harsh OLED black) */
+    --bg-primary: #0d0e11;
+    --bg-secondary: #13141a;
+    --bg-card: #17181f;
+    --bg-hover: #1e2028;
+    --text-primary: #edeef3;
+    --text-secondary: #888ba8;
+    --text-tertiary: #50526b;
+    --border: rgba(255, 255, 255, 0.08);
+    --accent: #a5b4fc;
+    --focus-ring: rgba(165, 180, 252, 0.35);
 
     /* Shadows for depth */
-    --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04);
-    --shadow-elevated: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
 
     /* Shadcn-style tokens mapped to theme variables */
     --background: var(--bg-primary);
@@ -41,7 +42,7 @@
     --destructive-foreground: #fef2f2;
     --input: var(--border);
     --ring: var(--focus-ring);
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   body {
@@ -49,7 +50,8 @@
     color: var(--foreground);
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     font-size: 0.9375rem;
-    line-height: 1.25rem;
+    line-height: 1.6;
+    letter-spacing: -0.011em;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -61,8 +63,19 @@
     border-color: var(--border);
   }
 
+  /* Heading scale */
+  h1 { font-size: 1.5rem;   line-height: 1.25; font-weight: 700; letter-spacing: -0.025em; }
+  h2 { font-size: 1.25rem;  line-height: 1.3;  font-weight: 700; letter-spacing: -0.02em; }
+  h3 { font-size: 1rem;     line-height: 1.35; font-weight: 600; letter-spacing: -0.015em; }
+  h4 { font-size: 0.9375rem;line-height: 1.4;  font-weight: 600; letter-spacing: -0.01em; }
+
+  /* Interactive elements — smooth transitions */
+  a, button {
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    @apply w-1.5 h-1.5;
   }
 
   ::-webkit-scrollbar-track {
@@ -71,19 +84,31 @@
 
   ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
-    @apply rounded;
+    border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.18);
   }
 
   /* Light theme scrollbar adjustment */
   .light-theme ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.12);
   }
 
   .light-theme ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.2);
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  .shadow-modal {
+    box-shadow: var(--shadow-modal);
   }
 }

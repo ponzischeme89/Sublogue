@@ -22,7 +22,7 @@
 
 <div
   class={cn(
-    'rounded-lg border border-border bg-card text-card-foreground shadow-sm',
+    'rounded-xl border border-border bg-card text-card-foreground shadow-[0_2px_8px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.04)]',
     showSkeleton ? 'relative overflow-hidden' : '',
     className,
     restClass
@@ -31,6 +31,6 @@
 >
   <slot />
   {#if showSkeleton}
-    <div class="pointer-events-none absolute inset-0 bg-[color:var(--bg-hover)] opacity-40 animate-pulse"></div>
+    <div class="pointer-events-none absolute inset-0 bg-[color:var(--bg-hover)] opacity-30 animate-pulse rounded-xl"></div>
   {/if}
 </div>
